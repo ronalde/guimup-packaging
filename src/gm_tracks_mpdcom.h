@@ -43,7 +43,7 @@ class tracks_mpdCom {
 //  functions
     tracks_mpdCom();
     virtual ~tracks_mpdCom ();
-    bool mpd_connect();
+    bool mpd_connect(ustring, int, ustring);
 	void mpd_disconnect();
     // mpd commands
     void play_this(int);
@@ -85,14 +85,11 @@ class tracks_mpdCom {
     songInfo get_songInfo_from(mpd_Song *theSong);
     bool statusCheck();
     bool mpd_reconnect();
-    ustring get_string(ustring);
-    ustring get_host();
-    int get_port();
 	int get_plistMax();
-    ustring get_password();
     bool errorCheck(ustring);
 	void get_statistics();
 	void get_playlist();
+	ustring get_string(ustring key);
 			
 //  variables
     mpd_Connection *conn;

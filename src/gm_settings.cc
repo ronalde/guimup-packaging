@@ -131,7 +131,7 @@ gm_settings::gm_settings()
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
 		abt_label.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
-		abt_label.set_markup("<b>Guimup 0.1.0</b>");
+		abt_label.set_markup("<b>Guimup 0.1.1</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS);
 		ustring s_about;
@@ -230,6 +230,11 @@ void gm_settings::on_button_cancel()
 
 void gm_settings::on_button_save()
 {
+	if (st_config == NULL)
+	{
+		cout << "Settings: Can't set config file" << endl;
+		return;
+	}
 	// connect
 	st_config->set_bool("AutoConnect", cnt_cb_autocon.get_active());
 	st_config->set_bool("OverrideMPDconf", cnt_cb_override.get_active());
@@ -274,7 +279,9 @@ void gm_settings::on_button_save()
     	addDev.enabled = srv_cb_out5.get_active();
     	oDevices.push_back(addDev);
     }
-	st_mpdCom->setOutputs(oDevices);
+	if (st_mpdCom != NULL)
+		st_mpdCom->setOutputs(oDevices);
+
 	st_config->set_bool("QuitMPD_onQuit", srv_cb_kill.get_active());
 	st_config->set_bool("StartMPD_onStart", srv_cb_launch.get_active());
 	// client

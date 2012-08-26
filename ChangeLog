@@ -4,8 +4,18 @@ version x.y.z
 x = major   y = minor   z = update
 
 
+v. 0.1.1     2008 06 05
+
+  (thanks to Adam Chapman for debugging)
+
+  Fixed: Connection problems with custom settings.
+  Fixed: Password was not read correctly from MPD's config file.
+  Fixed: Segfault when saving settings while not connected.
+  Added: Possibility to delete playlists.
+Changed: Minor cosmetic features.
+
 
 v. 0.1.0     2008 05 18
 
-  Added: everything (first public release).
+  Added: Everything (first public release)
 

@@ -79,7 +79,7 @@ void gm_Player::on_connectsignal(bool isconnected)
 	if (isconnected)
 	{
 		b_connected = true;
-		tracksWindow.connect_server();
+		tracksWindow.connect_server(serverName, serverPort, serverPassword);
 		settingsWindow.set_mpdcom( &mpdCom );
 	}
 	else
@@ -656,6 +656,8 @@ void gm_Player::init_signals()
 	mpdCom.signal_status.connect(sigc::mem_fun(*this, &gm_Player::set_status));
 	mpdCom.signal_songInfo.connect(sigc::mem_fun(*this, &gm_Player::on_newSong));
 	mpdCom.signal_statusInfo.connect(sigc::mem_fun(*this, &gm_Player::on_newStatus));
+	mpdCom.signal_host_port_pwd.connect(sigc::mem_fun(*this, &gm_Player::on_signal_host_port_pwd));
+
 	// return void
     bt_prev.signal_clicked().connect(sigc::bind<-1, int>(
               sigc::mem_fun(*this, &gm_Player::on_signal), ID_prev));
@@ -698,6 +700,14 @@ void gm_Player::init_signals()
 
 	pb_timeprogress.signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_progressClicked) );
 
+}
+
+
+void gm_Player::on_signal_host_port_pwd(ustring host, int port, ustring pwd)
+{
+	serverName = host;
+	serverPort = port;
+	serverPassword = pwd;
 }
 
 

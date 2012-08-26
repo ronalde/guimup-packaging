@@ -28,6 +28,7 @@
 #define CMD_ADD 2 // apend
 #define CMD_INS 3 // insert at moveTo
 #define CMD_MOV 4 // move to moveTo
+#define CMD_DPL 5 // delete playlist
 
 #include <list>
 #include <glibmm/ustring.h>

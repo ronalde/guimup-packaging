@@ -1,8 +1,8 @@
     ______________________________________________________________________
 
     GUIMUP     
-    version 0.1.0
-    May 18 2008
+    version 0.1.1
+    June 05 2008
 
     Copyright (C) 2008 Johan Spee
     www.coonsden.com
@@ -37,11 +37,10 @@
     
     DEPENDENCIES
 
-    To RUN this program depends on GTKMM (libgtkmm-2.4 or above), which has
+    To RUN this program depends on GTKMM (libgtkmm 2.4 or above), which has
     dependencies of its own.
  
-    To COMPILE from source additionally install:
-		libgtkmm-2.4-dev (or above)
+    To COMPILE from source additionally install libgtkmm-2.4-dev (2.4 or above).
     
     To compile type:
     ./configure

@@ -31,6 +31,7 @@
 #include <gtkmm/treestore.h>
 #include <gtkmm/cellrenderertext.h>
 #include <gtkmm/image.h>
+#include <gtkmm/messagedialog.h>
 #include <list>
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
@@ -109,6 +110,7 @@ private:
 			
 // 	functions
 	void sort_by_date(gm_itemList&);
+	bool on_key_pressed(GdkEventKey* event);
 	void on_row_activated(const Gtk::TreeModel::Path&, Gtk::TreeViewColumn*);
 	void on_row_expanded(const Gtk::TreeModel::iterator&, const Gtk::TreeModel::Path&);
 	std::string into_string(int);

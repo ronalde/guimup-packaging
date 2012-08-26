@@ -83,7 +83,7 @@ public:
 
 	void set_trSettings(tr_settings);
 	tr_settings get_trSettings();
-	void connect_server();
+	void connect_server(ustring, int, ustring);
 	void disconnect_server();
 	void set_listfont(ustring font);
 

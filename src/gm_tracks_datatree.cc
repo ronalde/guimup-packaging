@@ -68,6 +68,9 @@ gm_Datatree::gm_Datatree()
               &gm_Datatree::on_row_expanded) );
 	dtTreeView.signal_drag_data_get().connect(sigc::mem_fun(*this,
               &gm_Datatree::on_dtdrag_data_get));
+		// signal: del keypress on the treeview
+	dtTreeView.signal_key_press_event().connect(sigc::mem_fun(*this,
+              &gm_Datatree::on_key_pressed) );
 	
 	show_all_children();
 }
@@ -78,6 +81,60 @@ void gm_Datatree::set_listfont(ustring font)
 	dtTreeView.modify_font((Pango::FontDescription)font.data());
 }
 
+// delete playlist(s)
+bool gm_Datatree::on_key_pressed(GdkEventKey* event)
+{
+	if (dt_mpdCom == NULL)
+		return true;
+	
+	if (dataModeID == ID_plist && event->keyval == GDK_Delete)
+	{
+		int counter = 0;
+		gm_commandList newCommandList;
+		std::list<Gtk::TreeModel::Path> selpaths = theSelection->get_selected_rows();
+		std::list<Gtk::TreeModel::Path>::iterator path;
+		for(path = selpaths.begin(); path != selpaths.end(); ++path)
+		{
+			Gtk::TreeModel::Row row = *(dtTreeStore->get_iter(*path));
+			listItem lit = row[dtColumns.col_listitem];
+			if (lit.type == TP_PLAYLIST)
+			{
+				gm_cmdStruct newCommand;
+				newCommand.cmd = CMD_DPL;
+				newCommand.file = lit.dirpath;
+				newCommandList.push_front(newCommand);
+				counter++;
+			}
+		}
+		
+		if (counter > 0)
+		{
+			// dialog
+			Gtk::MessageDialog dlg("Confirm delete", false /* use_markup */, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
+  			dlg.set_secondary_text( "This will delete all selected playlists from your harddisk.");
+
+  			int result = dlg.run();
+
+  			switch(result)
+  			{
+    			case(Gtk::RESPONSE_OK):
+    			{
+					dt_mpdCom->execute_cmds( newCommandList, false );
+					newCommandList.clear();
+					get_playlists();
+      				break;
+    			}
+    			case(Gtk::RESPONSE_CANCEL):
+      				break;
+
+				  default:
+      				break;
+  			}
+			// end dialog
+		}
+	}
+	return true;
+}
 
 void gm_Datatree::on_dtdrag_data_get(
         const Glib::RefPtr<Gdk::DragContext>&,

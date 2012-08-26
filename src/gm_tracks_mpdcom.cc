@@ -61,62 +61,6 @@ tracks_mpdCom::tracks_mpdCom()
     }
 }
 
-ustring tracks_mpdCom::get_musicPath()
-{
-    ustring result = get_string("music_directory");
-    if (!result.empty())
-    {
-        if (result.rfind("/") != result.length()-1)
-        result += "/";
-    }
-    return result;
-}
-
-ustring tracks_mpdCom::get_playlistPath()
-{
-    ustring result = get_string("playlist_directory");
-    if (!result.empty())
-    {
-        if (result.rfind("/") != result.length()-1)
-        result += "/";
-    }
-    return result;
-}
-
-ustring tracks_mpdCom::get_host()
-{
-    ustring result = get_string("bind_to_address");
-    return result;
-}
-
-int tracks_mpdCom::get_port()
-{
-    int result = 0;
-    ustring get = get_string("port");
-    std::string str_int = get.data();
-    std::istringstream input(str_int);
-    input >> result;
-    return result;
-}
-
-int tracks_mpdCom::get_plistMax()
-{
-    int result = 0;
-    ustring get = get_string("max_playlist_length");
-    std::string str_int = get.data();
-    std::istringstream input(str_int);
-    input >> result;
-    if (result == 0)
-        result = 16384;
-    return result;
-}
-
-ustring tracks_mpdCom::get_password()
-{
-    ustring result = get_string("password");
-    return result;
-}
-
 
 ustring tracks_mpdCom::get_string(ustring key)
 {
@@ -150,15 +94,51 @@ ustring tracks_mpdCom::get_string(ustring key)
 }
 
 
-bool tracks_mpdCom::mpd_connect()
+ustring tracks_mpdCom::get_musicPath()
+{
+    ustring result = get_string("music_directory");
+    if (!result.empty())
+    {
+        if (result.rfind("/") != result.length()-1)
+        result += "/";
+    }
+    return result;
+}
+
+ustring tracks_mpdCom::get_playlistPath()
+{
+    ustring result = get_string("playlist_directory");
+    if (!result.empty())
+    {
+        if (result.rfind("/") != result.length()-1)
+        result += "/";
+    }
+    return result;
+}
+
+
+int tracks_mpdCom::get_plistMax()
+{
+    int result = 0;
+    //ustring get = get_string("max_playlist_length");
+    //std::string str_int = get.data();
+    //std::istringstream input(str_int);
+    //input >> result;
+    //if (result == 0)
+        result = 16384;
+    return result;
+}
+
+
+bool tracks_mpdCom::mpd_connect(ustring host, int port, ustring pwd)
 {
     // already connected
     if (conn != NULL)
         return true;
 
-    serverPort = get_port();
-    serverName = get_host();
-    serverPassword = get_password();
+    serverPort = port;
+    serverName = host;
+    serverPassword = pwd;
 
     b_connecting = true;
 
@@ -749,6 +729,16 @@ void tracks_mpdCom::execute_cmds(gm_commandList cmdlist, bool resetlist)
 
         switch (curCommand.cmd)
         {
+			case CMD_DPL:
+			{
+				cout << "deleting playlits: " << curCommand.file << endl;
+
+				mpd_sendRmCommand(conn, curCommand.file.data());
+        		mpd_finishCommand(conn);
+				errorCheck("mpd_sendRmCommand");
+				break;
+			}
+				
             case CMD_ADD:
             {
                 if (plistlength + 1  > plistMax)

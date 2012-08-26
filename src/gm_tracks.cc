@@ -30,9 +30,9 @@ gm_Tracks::gm_Tracks()
 }
 
 // called by player when connected
-void gm_Tracks::connect_server()
+void gm_Tracks::connect_server(ustring host, int port, ustring pwd)
 {
-	if (!mpdCom.mpd_connect())
+	if (!mpdCom.mpd_connect(host, port, pwd))
 		cout << "Could not connect \"Tracks\"" << endl;
 }
 
@@ -215,6 +215,7 @@ void gm_Tracks::init_signals()
     mpdCom.signal_update_ready.connect(sigc::mem_fun(*this, &gm_Tracks::on_dbupdate_ready));
 	mpdCom.signal_songchange.connect(sigc::mem_fun(*this, &gm_Tracks::on_songchange));
 	mpdCom.signal_connected.connect(sigc::mem_fun(*this, &gm_Tracks::on_connectsignal));
+	
 	// widgets
     bt_update.signal_clicked().connect(sigc::bind<-1, int>(
               sigc::mem_fun(*this, &gm_Tracks::on_signal), ID_upd));
@@ -243,6 +244,7 @@ void gm_Tracks::on_dt_cmdlist(gm_commandList cmdlist)
 	on_pldata_received.  */
 	thePlaylist.set_cmdlist(cmdlist);
 }
+
 
 // Signal handler.
 void gm_Tracks::on_signal(int sigID)

@@ -23,7 +23,7 @@ a. Correct. You'll have to add it yourself (Use 'Alacarte' with Gnome).
 
 
 q. Guimup can't find... (my music/album art/playlists).
-a. Make sure ~/.mpdconf (or /etc/mpd.conf) is set up correctly: that is where guimup gets the paths from. And make sure MPD and Guimup are using the SAME MPD config file!
+a. Make sure ~/.mpdconf (or /etc/mpd.conf) is set up correctly: that is where guimup gets the paths from. And make sure MPD and Guimup are using the SAME MPD config file! When using /etc/mpd.conf make sure you have reading rights.
 
 
 q. Comment tags in mp3's are not displayed.
@@ -43,14 +43,14 @@ a. Purge removes all played items from the playlist. Note that the property 'pla
 
 
 q. How come the 'played' marks keep disappearing?
-a. See above: the playlist is apparently reloaded by mpd.
+a. See above: the playlist is apparently reset by mpd.
 
 
 q. Where does the album art come from?
 a. From the directory where the audio file is located. It is recommended to put a 200x200 pixel bitmap named folder.jpg in every album directory. The program looks for a filename that matches *folder* *album* *cover* or *front* (in that order), and an extension that matches .jpg .png .gif or .bmp. An additional custom search-string can be added in the options window (Client tab). This string will be used first.
 
 
-q. The sound is terrible with 2 devices selected. How comes?
+q. The sound is terrible with 2 devices selected. Why?
 a. Mpd's output devices are virtual and defined in ~/.mpdconf (or /etc/mpd.conf). In turn they can refer to virtual alsa output devices, defined in .asoundrc. These virtual devices point to one or more real, hardware devices. The problems occur when a combination of mpd's output devices uses the same hardware device twice.
 
 

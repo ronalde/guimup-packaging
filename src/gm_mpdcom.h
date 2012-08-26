@@ -89,6 +89,7 @@ class gm_mpdCom {
     sigc::signal<void, songInfo> signal_songInfo;
     // Player must notify 'tracks' and 'settings' when dis/reconnected
     sigc::signal<void, bool> signal_connected;
+	sigc::signal<void, ustring, int, ustring> signal_host_port_pwd;
 
   protected:
 

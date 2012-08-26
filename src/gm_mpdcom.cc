@@ -34,13 +34,14 @@ gm_mpdCom::gm_mpdCom()
 	current_songID = -1;
 	current_songNum = -1;
 	current_status = -1;
+	
     // first try ~/.mpdconf
     ustring homeDir = getenv("HOME");
     if (homeDir.rfind("/") != homeDir.length()-1)
         homeDir += "/";
         mpdconf_path = homeDir + ".mpdconf";
-
     std::ifstream conffile (mpdconf_path.data());
+	
     if (!conffile.is_open())
     {	// next try /etc/mpd.conf
         mpdconf_path = "/etc/mpd.conf";
@@ -58,7 +59,10 @@ gm_mpdCom::gm_mpdCom()
 	}
 	
 	if (b_mpdconf_found)
+	{
 		cout << "MPD: using " << mpdconf_path.data() << endl;
+		cout << "MPD: user is " << get_user() << endl;
+	}
 	else
 	{
 		cout << "Could not locate MPD's config file" << endl;
@@ -147,7 +151,33 @@ int gm_mpdCom::get_port()
 
 ustring gm_mpdCom::get_password()
 {
-    ustring result = get_string("password");
+	ustring key  = "password";
+    ustring result = "";
+    if (!b_mpdconf_found)
+        return result;
+
+    std::string s_line;
+
+    std::ifstream conffile (mpdconf_path.data());
+    if (conffile.is_open())
+    {
+        while (! conffile.eof() )
+        {
+            getline (conffile, s_line);
+            // skip empty lines and comments
+            if (s_line.empty() || s_line.find("#") == 0)
+                  continue;
+            if (s_line.find(key) == 0)
+            {
+                // substr refuses to do this in one step, so take two steps:
+                s_line = s_line.substr(s_line.find("\"")+1, s_line.length());
+                s_line = s_line.substr(0, s_line.rfind("@"));
+                result = s_line;
+                break;
+            }
+        }
+        conffile.close();
+    }
     return result;
 }
 
@@ -319,6 +349,7 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
 	statusCheck();
 	// poll mpd every 333 msec
 	statusLoop = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_mpdCom::statusCheck), 333);
+	signal_host_port_pwd.emit(serverName, serverPort, serverPassword);
     return true;
 }
 

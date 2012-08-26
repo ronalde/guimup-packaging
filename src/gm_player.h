@@ -126,7 +126,9 @@ private:
     ustring
         mpd_music_path,
         current_art_path,
-        custom_art_file;
+        custom_art_file,
+		serverName,
+		serverPassword;
     int
         current_status,
         current_volume,
@@ -134,7 +136,8 @@ private:
         btrowPos,
         alphacycler,
         aArt_H, aArt_W, aArt_row,
-		prev_fractint;
+		prev_fractint,
+		serverPort;
 
     guint8  *ptr_xfad,
             *ptr_orig,
@@ -201,6 +204,7 @@ private:
     void on_connectrequest(ustring, int, ustring, bool);
     void on_settingssaved();
     void on_signal(int);
+	void on_signal_host_port_pwd(ustring, int, ustring);
     void set_fonts();
     bool maxiMice();
     bool miniMice();
