@@ -25,28 +25,35 @@ guimup_SOURCES = \
 	gm_scroller.h \
 	gm_config.h \
 	gm_config.cc \
-	gm_taginfo.h \
-	gm_taginfo.cc \
 	gm_mpdcom.cc \
 	gm_mpdcom.h \
-	gm_tracks.h \
-	gm_tracks.cc \
+	gm_library.h \
+	gm_library.cc \
 	gm_songlist.h \
-	gm_tracks_mpdcom.cc \
-	gm_tracks_mpdcom.h \
-	gm_tracks_playlist.h \
-	gm_tracks_playlist.cc \
-	gm_tracks_datatree.cc \
-	gm_tracks_datatree.h \
+	gm_library_mpdcom.cc \
+	gm_library_mpdcom.h \
+	gm_library_playlist.h \
+	gm_library_playlist.cc \
+	gm_library_datatree.cc \
+	gm_library_datatree.h \
 	gm_commandlist.h \
 	gm_itemlist.h \
 	gm_settings.h \
 	gm_settings.cc \
 	gm_settings_pix.h \
 	gm_modeid.h \
-	gm_tracks_pix.h \
-	gm_tracks_playlist_pix.h \
-	gm_tracks_datatree_pix.h
+	gm_library_pix.h \
+	gm_library_playlist_pix.h \
+	gm_library_datatree_pix.h \
+	gm_treeview.h \
+	gm_treeview.cc \
+	gm_trayicon.h \
+	gm_trayicon.cc \
+	gm_slider.h \
+	gm_slider.cc \
+	str_pool.c \
+	str_pool.h
+
 
 guimup_LDFLAGS = 
 

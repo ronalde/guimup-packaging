@@ -1,7 +1,7 @@
 /*
  *  gm_settings.cc
  *  GUIMUP settings window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -28,8 +28,16 @@ gm_settings::gm_settings()
 	st_config = NULL;
 	// window properties
 	Glib::RefPtr<Gdk::Pixbuf> pxb;
-	pxb = Gdk::Pixbuf::create_from_inline(-1, mn_config, false);
-	set_icon(pxb);
+	
+    std::list< Glib::RefPtr<Gdk::Pixbuf> > window_icons;
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon16, false);
+    window_icons.push_back(pxb);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon24, false);
+    window_icons.push_back(pxb);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
+    window_icons.push_back(pxb);
+    set_icon_list(window_icons);
+	
 	pxb_con_ok  = Gdk::Pixbuf::create_from_inline(-1, con_ok, false);
 	pxb_con_dis = Gdk::Pixbuf::create_from_inline(-1, con_dis, false);
     set_title("Guimup Settings");
@@ -81,7 +89,6 @@ gm_settings::gm_settings()
 		cnt_bottomhbox.set_spacing(8);
 		cnt_image.set_size_request(32, 32);
 		cnt_label.set_alignment(0, 0.5);
-		cnt_label.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
 	vbx_server.set_border_width(6);
 	vbx_server.set_spacing(6);
 		srv_fr_output.set_label("Output devices");
@@ -105,11 +112,11 @@ gm_settings::gm_settings()
 	cli_fr_fonts.set_label("Font sizes");
 	cli_framevbox.set_border_width(4);
 	cli_framevbox.set_spacing(4);
-	cli_hbx_fontbtns.set_spacing(6);
-	cli_bt_reset.set_label("Reset all");
-	cli_bt_reset.set_size_request(120, -1);
+	cli_hbx_fontbtns.set_spacing(0);
+	cli_bt_reset.set_label("Reset");
+	cli_bt_reset.set_size_request(90, -1);
 	cli_bt_apply.set_label("Apply");
-	cli_bt_apply.set_size_request(120, -1);
+	cli_bt_apply.set_size_request(90, -1);
 	cli_spb_title.set_digits(0);
 	cli_spb_title.set_range(8, 16);
 	cli_spb_title.set_increments(1, 1);
@@ -130,31 +137,30 @@ gm_settings::gm_settings()
 	cli_spb_album.set_increments(1, 1);	
 	cli_lb_album.set_text("Album name & year");
 	cli_lb_album.set_alignment(0, 0.5);
-	cli_spb_tracks.set_digits(0);
-	cli_spb_tracks.set_range(8, 16);
-	cli_spb_tracks.set_increments(1, 1);
-	cli_lb_tracks.set_text("Data tree & playlist");
-	cli_lb_tracks.set_alignment(0, 0.5);
+	cli_spb_library.set_digits(0);
+	cli_spb_library.set_range(8, 16);
+	cli_spb_library.set_increments(1, 1);
+	cli_lb_library.set_text("Data tree & playlist");
+	cli_lb_library.set_alignment(0, 0.5);
 	cli_fr_restart.set_label("Restart to apply");
-	cli_vb_restart.set_border_width(4);
-	cli_vb_restart.set_spacing(4);
+	cli_hb_restart.set_border_width(4);
+	cli_hb_restart.set_spacing(4);
 	cli_cb_systray.set_label(" Use system tray");
 	cli_cb_ttips.set_label(" Show tooltips");
-	cli_et_art.set_size_request(120, -1);
-	cli_lb_art.set_text("Custom album art");
+	cli_et_artview.set_size_request(120, -1);
+	cli_lb_artview.set_text("Album art viewer");
+	cli_et_tagedit.set_size_request(120, -1);
+	cli_lb_tagedit.set_text("Tag editor");
 	vbx_about.set_border_width(6);
 		abt_hbox.set_size_request(-1,40);
 		abt_hbox.set_spacing(8);
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
-		abt_label.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
-		abt_label.set_markup("<b>Guimup 0.1.4</b>");
+		abt_label.set_markup("<b>Guimup 0.2.0</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS);
 		ustring s_about;
-		s_about += "&#10;";
-		s_about += "GTK User Interface for MPD&#10;&#10;";
-		s_about += "© 2008 - 2009 Johan Spee&#10;www.coonsden.com&#10;&#10;";
+		s_about += "&#10;GTK User Interface for MPD&#10;&#10;© 2008-2009 Johan Spee&#10;www.coonsden.com&#10;&#10;";
 		s_about += "<small><b>License</b>&#10;&#10;";
 		s_about += "Guimup is free software. You can redistribute it and [or] modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.&#10;&#10;";
 		s_about += "Guimup is distributed in the hope that it will be useful, but without any warrenty; without even the implied warranty of merchantability or fitness for a particular purpose. See the GNU General Public License for details.&#10;&#10;";
@@ -189,7 +195,7 @@ gm_settings::gm_settings()
 				cnt_hb_pswd.pack_start(cnt_et_pswd,false, false, 0);
 				cnt_hb_pswd.pack_end(cnt_lb_pswd,true, true, 0);
 	vbx_connect.pack_start(cnt_btcbox, true, false, 0);
-		cnt_btcbox.pack_start(cnt_btConnect, false, false, 6);
+		cnt_btcbox.pack_start(cnt_btConnect, false, false, 78);
 		cnt_btcbox.pack_start(cnt_spacer, true, true, 0);
 	vbx_connect.pack_end(cnt_bottomhbox, false, false, 0);
 		cnt_bottomhbox.pack_start(cnt_image, false, false, 8);
@@ -229,19 +235,22 @@ gm_settings::gm_settings()
 			cli_framevbox.pack_start(cli_hbx_album, false, false, 0);
 				cli_hbx_album.pack_start(cli_spb_album, false, false, 0);
 				cli_hbx_album.pack_start(cli_lb_album, true, true, 8);
-			cli_framevbox.pack_start(cli_hbx_tracks, false, false, 0);
-				cli_hbx_tracks.pack_start(cli_spb_tracks, false, false, 0);
-				cli_hbx_tracks.pack_start(cli_lb_tracks, false, false, 8);
+			cli_framevbox.pack_start(cli_hbx_library, false, false, 0);
+				cli_hbx_library.pack_start(cli_spb_library, false, false, 0);
+				cli_hbx_library.pack_start(cli_lb_library, false, false, 8);
 			cli_framevbox.pack_start(cli_hbx_fontbtns, false, false, 0);
-				cli_hbx_fontbtns.pack_start(cli_bt_reset, false, false, 8);
-				cli_hbx_fontbtns.pack_end(cli_bt_apply, false, false, 8);
+				cli_hbx_fontbtns.pack_end(cli_bt_reset, false, false, 6);
+				cli_hbx_fontbtns.pack_end(cli_bt_apply, false, false, 6);
 	vbx_client.pack_start(cli_fr_restart, true, false, 0);
-		cli_fr_restart.add(cli_vb_restart);
-			cli_vb_restart.pack_start(cli_cb_systray, false, false, 0);
-			cli_vb_restart.pack_start(cli_cb_ttips, true, false, 0);
-	vbx_client.pack_end(cli_hb_art, false, false, 0);
-		cli_hb_art.pack_start(cli_et_art, false, false, 0);
-		cli_hb_art.pack_start(cli_lb_art, false, false, 6);
+		cli_fr_restart.add(cli_hb_restart);
+			cli_hb_restart.pack_start(cli_cb_systray, false, false, 2);
+			cli_hb_restart.pack_end(cli_cb_ttips, true, false, 2);
+	vbx_client.pack_end(cli_hb_artview, false, false, 0);
+		cli_hb_artview.pack_start(cli_et_artview, false, false, 0);
+		cli_hb_artview.pack_start(cli_lb_artview, false, false, 6);
+	vbx_client.pack_end(cli_hb_tagedit, false, false, 0);
+		cli_hb_tagedit.pack_start(cli_et_tagedit, false, false, 0);
+		cli_hb_tagedit.pack_start(cli_lb_tagedit, false, false, 6);
 		
 	vbx_about.pack_start(abt_hbox, false, false, 0);
 		abt_hbox.pack_start(abt_image, false, false, 8);
@@ -254,16 +263,17 @@ gm_settings::gm_settings()
 
 void gm_settings::on_button_cancel()
 {
+	get_position(st_config->SettingsWindow_Xpos, st_config->SettingsWindow_Ypos);
 	this->hide();
 }
 
 void gm_settings::on_fonts_apply()
 {
-	st_config->set_int("Scroller_Fontsize", cli_spb_title.get_value());
-	st_config->set_int("TrackInfo_Fontsize", cli_spb_trackinfo.get_value());
-	st_config->set_int("Time_Fontsize", cli_spb_time.get_value());
-	st_config->set_int("Album_Fontsize", cli_spb_album.get_value());
-	st_config->set_int("Tracks_Fontsize", cli_spb_tracks.get_value());
+	st_config->Scroller_Fontsize = cli_spb_title.get_value();
+	st_config->TrackInfo_Fontsize = cli_spb_trackinfo.get_value();
+	st_config->Time_Fontsize = cli_spb_time.get_value();
+	st_config->Album_Fontsize = cli_spb_album.get_value();
+	st_config->library_Fontsize = cli_spb_library.get_value();
 	signal_applyfonts.emit();
 }
 
@@ -271,15 +281,15 @@ void gm_settings::on_button_save()
 {
 	if (st_config == NULL)
 	{
-		cout << "Settings: Can't set config file" << endl;
+		cout << "Settings: Can't save config file" << endl;
 		return;
 	}
 	// connect
-	st_config->set_bool("AutoConnect", cnt_cb_autocon.get_active());
-	st_config->set_bool("OverrideMPDconf", cnt_cb_override.get_active());
-	st_config->set_string("MPD_Host", cnt_et_host.get_text());
-	st_config->set_string("MPD_Port", cnt_et_port.get_text());
-	st_config->set_string("MPD_Password", cnt_et_pswd.get_text());
+	st_config->AutoConnect = cnt_cb_autocon.get_active();
+	st_config->OverrideMPDconf = cnt_cb_override.get_active();
+	st_config->MPD_Host = cnt_et_host.get_text();
+	st_config->MPD_Port = atoi(cnt_et_port.get_text().c_str());
+	st_config->MPD_Password = cnt_et_pswd.get_text();
 	
 	// server
 	outdev_list oDevices;
@@ -322,22 +332,24 @@ void gm_settings::on_button_save()
 	if (st_mpdCom != NULL)
 		st_mpdCom->setOutputs(oDevices);
 	
-	st_config->set_string("MPD_MusicPath", srv_et_mpath.get_text());
-	st_config->set_string("MPD_PlaylistPath", srv_et_ppath.get_text());
+	st_config->MPD_MusicPath = srv_et_mpath.get_text();
+	st_config->MPD_PlaylistPath = srv_et_ppath.get_text();
 
-	st_config->set_bool("QuitMPD_onQuit", srv_cb_kill.get_active());
-	st_config->set_bool("StartMPD_onStart", srv_cb_launch.get_active());
+	st_config->QuitMPD_onQuit = srv_cb_kill.get_active();
+	st_config->StartMPD_onStart = srv_cb_launch.get_active();
 	// client
-	st_config->set_int("Scroller_Fontsize", cli_spb_title.get_value());
-	st_config->set_int("TrackInfo_Fontsize", cli_spb_trackinfo.get_value());
-	st_config->set_int("Time_Fontsize", cli_spb_time.get_value());
-	st_config->set_int("Album_Fontsize", cli_spb_album.get_value());
-	st_config->set_int("Tracks_Fontsize", cli_spb_tracks.get_value());
-	st_config->set_bool("show_ToolTips", cli_cb_ttips.get_active());
-	st_config->set_bool("use_TrayIcon", cli_cb_systray.get_active());
-	st_config->set_string("AlbumArt_File", cli_et_art.get_text());
+	st_config->Scroller_Fontsize = cli_spb_title.get_value();
+	st_config->TrackInfo_Fontsize = cli_spb_trackinfo.get_value();
+	st_config->Time_Fontsize = cli_spb_time.get_value();
+	st_config->Album_Fontsize = cli_spb_album.get_value();
+	st_config->library_Fontsize = cli_spb_library.get_value();
+	st_config->show_ToolTips = cli_cb_ttips.get_active();
+	st_config->use_TrayIcon = cli_cb_systray.get_active();
+	st_config->Art_Viewer = cli_et_artview.get_text();
+	st_config->Tag_Editor = cli_et_tagedit.get_text();	
 	// hide the window
 	signal_settingssaved.emit();
+	get_position(st_config->SettingsWindow_Xpos, st_config->SettingsWindow_Ypos);
 	this->hide();
 }
 
@@ -358,22 +370,22 @@ void gm_settings::on_button_connect()
 
 void gm_settings::on_fonts_reset()
 {
-	cli_spb_title.set_value(12);
-	cli_spb_trackinfo.set_value(10);
-	cli_spb_time.set_value(12);
-	cli_spb_album.set_value(11);
-	cli_spb_tracks.set_value(12);
+	cli_spb_title.set_value(11);
+	cli_spb_trackinfo.set_value(9);
+	cli_spb_time.set_value(11);
+	cli_spb_album.set_value(10);
+	cli_spb_library.set_value(11);
 }
 
 
 void gm_settings::load_and_show()
 {
 	// get connect settings
-	cnt_cb_autocon.set_active(st_config->get_bool("AutoConnect"));
-	cnt_cb_override.set_active(st_config->get_bool("OverrideMPDconf"));
-	cnt_et_host.set_text(st_config->get_string("MPD_Host"));
-	cnt_et_port.set_text(st_config->get_string("MPD_Port"));
-	cnt_et_pswd.set_text(st_config->get_string("MPD_Password"));
+	cnt_cb_autocon.set_active(st_config->AutoConnect);
+	cnt_cb_override.set_active(st_config->OverrideMPDconf);
+	cnt_et_host.set_text(st_config->MPD_Host);
+	cnt_et_port.set_text(into_string(st_config->MPD_Port));
+	cnt_et_pswd.set_text(st_config->MPD_Password);
 	// get server settings
 	outdev_list oDevices;
 	if (st_mpdCom != NULL)
@@ -472,29 +484,25 @@ void gm_settings::load_and_show()
     	srv_cb_out5.set_sensitive(false);
     }
 	
-	srv_et_mpath.set_text(st_config->get_string("MPD_MusicPath"));
-	srv_et_ppath.set_text(st_config->get_string("MPD_PlaylistPath"));
+	srv_et_mpath.set_text(st_config->MPD_MusicPath);
+	srv_et_ppath.set_text(st_config->MPD_PlaylistPath);
 	
-	srv_cb_kill.set_active(st_config->get_bool("QuitMPD_onQuit"));
-	srv_cb_launch.set_active(st_config->get_bool("StartMPD_onStart"));
+	srv_cb_kill.set_active(st_config->QuitMPD_onQuit);
+	srv_cb_launch.set_active(st_config->StartMPD_onStart);
 	// get client settings
-	cli_spb_title.set_value(st_config->get_int("Scroller_Fontsize"));
-	cli_spb_trackinfo.set_value(st_config->get_int("TrackInfo_Fontsize"));
-	cli_spb_time.set_value(st_config->get_int("Time_Fontsize"));
-	cli_spb_album.set_value(st_config->get_int("Album_Fontsize"));
-	cli_spb_tracks.set_value(st_config->get_int("Tracks_Fontsize"));
-	cli_cb_systray.set_active(st_config->get_bool("use_TrayIcon"));
-	cli_cb_ttips.set_active(st_config->get_bool("show_ToolTips"));
-	cli_et_art.set_text(st_config->get_string("AlbumArt_File"));
+	cli_spb_title.set_value(st_config->Scroller_Fontsize);
+	cli_spb_trackinfo.set_value(st_config->TrackInfo_Fontsize);
+	cli_spb_time.set_value(st_config->Time_Fontsize);
+	cli_spb_album.set_value(st_config->Album_Fontsize);
+	cli_spb_library.set_value(st_config->library_Fontsize);
+	cli_cb_systray.set_active(st_config->use_TrayIcon);
+	cli_cb_ttips.set_active(st_config->show_ToolTips);
+	cli_et_artview.set_text(st_config->Art_Viewer);
+	cli_et_tagedit.set_text(st_config->Tag_Editor);
 	// show the window			 
 	this->show();
 }
 
-
-void gm_settings::set_stPos(st_posxy sets)
-{
-	this->move(sets.x_pos, sets.y_pos);
-}
 
 // set a pointer to the parent's config
 void gm_settings::set_config(gm_Config *conf)
@@ -522,17 +530,6 @@ void gm_settings::set_mpdcom(gm_mpdCom *com)
 }
 
 
-st_posxy gm_settings::get_stPos()
-{
-	st_posxy sets;
-	int x, y;
-    get_position(x, y);
-	sets.x_pos = x;
-	sets.y_pos = y;
-	return sets;
-}
-
-
 std::string gm_settings::into_string(int in)
 {
 	std::string str_int;
@@ -540,6 +537,15 @@ std::string gm_settings::into_string(int in)
 	out << in;
 	str_int = out.str();
 	return str_int;	
+}
+
+
+// window calls this when closed by clicking [x]
+bool gm_settings::on_delete_event(GdkEventAny* event)
+{
+	get_position(st_config->SettingsWindow_Xpos, st_config->SettingsWindow_Ypos);
+	this->hide();
+	return true; // ignore event
 }
 
 

@@ -49,6 +49,8 @@ struct statInfo
     int mpd_volume;
     bool mpd_random;
     bool mpd_repeat;
+    bool mpd_single;
+    bool mpd_consume;
 };
 
 
@@ -70,8 +72,6 @@ class gm_mpdCom {
     void pause();
     void resume();
     void next();
-    void set_random(bool);
-    void set_repeat(bool);
     void set_volume(int);
 	void volume_up(int);
 	void volume_down(int);
@@ -86,13 +86,14 @@ class gm_mpdCom {
     ustring get_version();
     outdev_list getOutputs();
     void setOutputs(outdev_list oDevices);
+	void mpd_disconnect();
 //  variables
 
 //  signals
     sigc::signal<void, int, ustring> signal_status;
     sigc::signal<void, statInfo> signal_statusInfo;
     sigc::signal<void, songInfo> signal_songInfo;
-    // Player must notify 'tracks' and 'settings' when dis/reconnected
+    // Player must notify 'library' and 'settings' when dis/reconnected
     sigc::signal<void, bool> signal_connected;
 	sigc::signal<void, ustring, int, ustring> signal_host_port_pwd;
 
@@ -120,7 +121,8 @@ class gm_mpdCom {
         b_mpdconf_found,
         b_dbaseUpdating,
         b_connecting,
-        b_reload;
+        b_reload,
+		b_no_volume;
     int
         current_playlist,
         current_songNum,
@@ -128,7 +130,6 @@ class gm_mpdCom {
         current_status,
         serverPort,
 		current_volume;
-
     ustring
         serverName,
         serverPassword,

@@ -1,7 +1,7 @@
 /*
  *  gm_settings.h
  *  GUIMUP settings window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -43,12 +43,6 @@
 #include "gm_mpdcom.h"
 #include "gm_config.h"
 
-struct st_posxy
-{
-    int x_pos;
-    int y_pos;
-};
-
 
 class gm_settings : public Gtk::Window
 {
@@ -56,8 +50,6 @@ public:
     gm_settings();
     virtual ~gm_settings();
 
-    void set_stPos(st_posxy sets);
-    st_posxy get_stPos();
     void set_mpdcom(gm_mpdCom*);
     void set_config(gm_Config *conf);
     void load_and_show();
@@ -75,6 +67,7 @@ private:
     void on_fonts_reset();
 	void on_fonts_apply();
     std::string into_string(int in);
+	bool on_delete_event(GdkEventAny* event);
 
 //  widgets:
     Gtk::VBox mainVBox;
@@ -133,19 +126,22 @@ private:
                         Gtk::HBox cli_hbx_album;
                             Gtk::SpinButton cli_spb_album;
                             Gtk::Label cli_lb_album;
-                        Gtk::HBox cli_hbx_tracks;
-                            Gtk::SpinButton cli_spb_tracks;
-                            Gtk::Label cli_lb_tracks;
+                        Gtk::HBox cli_hbx_library;
+                            Gtk::SpinButton cli_spb_library;
+                            Gtk::Label cli_lb_library;
 						Gtk::HBox cli_hbx_fontbtns;
 							Gtk::Button cli_bt_reset;
 							Gtk::Button cli_bt_apply;
 			Gtk::Frame cli_fr_restart;
-				Gtk::VBox cli_vb_restart;
+				Gtk::HBox cli_hb_restart;
             		Gtk::CheckButton cli_cb_systray;
             		Gtk::CheckButton cli_cb_ttips;
-            Gtk::HBox cli_hb_art;
-                        Gtk::Entry cli_et_art;
-                        Gtk::Label cli_lb_art;
+            Gtk::HBox cli_hb_artview;
+                        Gtk::Entry cli_et_artview;
+                        Gtk::Label cli_lb_artview;
+            Gtk::HBox cli_hb_tagedit;
+                        Gtk::Entry cli_et_tagedit;
+                        Gtk::Label cli_lb_tagedit;
         Gtk::VBox vbx_about;
             Gtk::HBox abt_hbox;
             Gtk::Image abt_image;

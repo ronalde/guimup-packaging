@@ -1,7 +1,7 @@
 /*
  *  gm_Scroller.h
  *  GUIMUP graphical text scroller
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -27,7 +27,9 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
-
+#include <iostream>
+    using std::cout;
+    using std::endl;
 
 class gm_Scroller : public Gtk::Image
 {
@@ -35,14 +37,15 @@ public:
 //  functions
     gm_Scroller();
     virtual ~gm_Scroller();
-    virtual void set_title( ustring artist, ustring title = "" );
-    virtual void set_pause( bool );
-    virtual void set_fg( ustring );
-    virtual void set_bg( ustring );
-    virtual void set_size_request( int, int );
-    virtual void set_fast( bool );
-    virtual void set_delay( int );
-    virtual void set_font( ustring );
+    void set_title( ustring artist, ustring title = "" );
+    void set_pause( bool );
+    void set_fg( ustring );
+    void set_bg( ustring );
+    void set_size_request( int, int );
+    void set_delay( int );
+    void set_font( ustring );
+	void on_mouse_enter();
+	void on_mouse_leave();
 
 protected:
 
@@ -64,8 +67,7 @@ private:
     bool
         b_scrolling,
         b_pause,
-        b_busy,
-        b_fast;
+        b_busy;
     int
         scrollpos,
         scrollstep,
@@ -74,7 +76,8 @@ private:
         H_layout,
         W_cropped,
         all_stride,
-        crp_stride;
+        crp_stride,
+		cR, cG, cB;
     Glib::RefPtr<Pango::Context> context;
     Glib::RefPtr<Pango::Layout> layout;
     Glib::RefPtr<Gdk::Pixbuf> pxb_fulltext, pxb_display;

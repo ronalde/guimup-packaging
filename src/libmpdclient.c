@@ -66,6 +66,10 @@
 #  endif
 #endif
 
+#ifndef WIN32
+#include <sys/un.h>
+#endif
+
 #ifndef MSG_DONTWAIT
 #  define MSG_DONTWAIT 0
 #endif
@@ -100,18 +104,21 @@ static int do_connect_fail(mpd_Connection *connection,
                            const struct sockaddr *serv_addr, int addrlen)
 {
 	int iMode = 1; /* 0 = blocking, else non-blocking */
+	if (connect(connection->sock, serv_addr, addrlen) == SOCKET_ERROR)
+		return 1;
 	ioctlsocket(connection->sock, FIONBIO, (u_long FAR*) &iMode);
-	return (connect(connection->sock,serv_addr,addrlen) == SOCKET_ERROR
-			&& WSAGetLastError() != WSAEWOULDBLOCK);
+	return 0;
 }
 #else /* !WIN32 (sane operating systems) */
 static int do_connect_fail(mpd_Connection *connection,
                            const struct sockaddr *serv_addr, int addrlen)
 {
-	int flags = fcntl(connection->sock, F_GETFL, 0);
+	int flags;
+	if (connect(connection->sock, serv_addr, addrlen) < 0)
+		return 1;
+	flags = fcntl(connection->sock, F_GETFL, 0);
 	fcntl(connection->sock, F_SETFL, flags | O_NONBLOCK);
-	return (connect(connection->sock,serv_addr,addrlen)<0 &&
-				errno!=EINPROGRESS);
+	return 0;
 }
 #endif /* !WIN32 */
 
@@ -129,7 +136,7 @@ static int mpd_connect(mpd_Connection * connection, const char * host, int port,
 	 * Setup hints
 	 */
 	hints.ai_flags     = AI_ADDRCONFIG;
-	hints.ai_family    = PF_UNSPEC;
+	hints.ai_family    = AF_UNSPEC;
 	hints.ai_socktype  = SOCK_STREAM;
 	hints.ai_protocol  = IPPROTO_TCP;
 	hints.ai_addrlen   = 0;
@@ -151,6 +158,8 @@ static int mpd_connect(mpd_Connection * connection, const char * host, int port,
 
 	for (res = addrinfo; res; res = res->ai_next) {
 		/* create socket */
+		if (connection->sock >= 0)
+			closesocket(connection->sock);
 		connection->sock = socket(res->ai_family, SOCK_STREAM,
 		                          res->ai_protocol);
 		if (connection->sock < 0) {
@@ -167,11 +176,13 @@ static int mpd_connect(mpd_Connection * connection, const char * host, int port,
 		/* connect stuff */
  		if (do_connect_fail(connection,
 		                    res->ai_addr, res->ai_addrlen)) {
- 			/* try the next address family */
+ 			/* try the next address */
  			closesocket(connection->sock);
  			connection->sock = -1;
  			continue;
 		}
+
+		break;
 	}
 
 	freeaddrinfo(addrinfo);
@@ -222,6 +233,8 @@ static int mpd_connect(mpd_Connection * connection, const char * host, int port,
 		break;
 	}
 
+	if (connection->sock >= 0)
+		closesocket(connection->sock);
 	if((connection->sock = socket(dest->sa_family,SOCK_STREAM,0))<0) {
 		strcpy(connection->errorStr,"problems creating socket");
 		connection->error = MPD_ERROR_SYSTEM;
@@ -286,15 +299,15 @@ static mpd_ReturnElement * mpd_newReturnElement(const char * name, const char * 
 {
 	mpd_ReturnElement * ret = malloc(sizeof(mpd_ReturnElement));
 
-	ret->name = strdup(name);
-	ret->value = strdup(value);
+	ret->name = str_pool_get(name);
+	ret->value = str_pool_get(value);
 
 	return ret;
 }
 
 static void mpd_freeReturnElement(mpd_ReturnElement * re) {
-	free(re->name);
-	free(re->value);
+	str_pool_put(re->name);
+	str_pool_put(re->value);
 	free(re);
 }
 
@@ -306,7 +319,7 @@ void mpd_setConnectionTimeout(mpd_Connection * connection, float timeout) {
 }
 
 static int mpd_parseWelcome(mpd_Connection * connection, const char * host, int port,
-                            char * rt, char * output) {
+                            char * output) {
 	char * tmp;
 	char * test;
 	int i;
@@ -339,6 +352,53 @@ static int mpd_parseWelcome(mpd_Connection * connection, const char * host, int 
 	return 0;
 }
 
+#ifndef WIN32
+static int mpd_connect_un(mpd_Connection * connection,
+			  const char * host, float timeout)
+{
+	int error, flags;
+	size_t path_length;
+	struct sockaddr_un sun;
+
+	path_length = strlen(host);
+	if (path_length >= sizeof(sun.sun_path)) {
+		strcpy(connection->errorStr, "unix socket path is too long");
+		connection->error = MPD_ERROR_UNKHOST;
+		return -1;
+	}
+
+	sun.sun_family = AF_UNIX;
+	memcpy(sun.sun_path, host, path_length + 1);
+
+	connection->sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (connection->sock < 0) {
+		strcpy(connection->errorStr, "problems creating socket");
+		connection->error = MPD_ERROR_SYSTEM;
+		return -1;
+	}
+
+	mpd_setConnectionTimeout(connection, timeout);
+
+	flags = fcntl(connection->sock, F_GETFL, 0);
+	fcntl(connection->sock, F_SETFL, flags | O_NONBLOCK);
+
+	error = connect(connection->sock, (struct sockaddr*)&sun, sizeof(sun));
+	if (error < 0) {
+		/* try the next address family */
+		close(connection->sock);
+		connection->sock = 0;
+
+		snprintf(connection->errorStr,MPD_BUFFER_MAX_LENGTH,
+			 "problems connecting to \"%s\": %s",
+			 host, strerror(errno));
+		connection->error = MPD_ERROR_CONNPORT;
+		return -1;
+	}
+
+	return 0;
+}
+#endif /* WIN32 */
+
 mpd_Connection * mpd_newConnection(const char * host, int port, float timeout) {
 	int err;
 	char * rt;
@@ -347,6 +407,7 @@ mpd_Connection * mpd_newConnection(const char * host, int port, float timeout) {
 	struct timeval tv;
 	fd_set fds;
 	strcpy(connection->buffer,"");
+	connection->sock = -1;
 	connection->buflen = 0;
 	connection->bufstart = 0;
 	strcpy(connection->errorStr,"");
@@ -361,7 +422,13 @@ mpd_Connection * mpd_newConnection(const char * host, int port, float timeout) {
 	if (winsock_dll_error(connection))
 		return connection;
 
-	if (mpd_connect(connection, host, port, timeout) < 0)
+#ifndef WIN32
+	if (host[0] == '/')
+		err = mpd_connect_un(connection, host, timeout);
+	else
+#endif
+		err = mpd_connect(connection, host, port, timeout);
+	if (err < 0)
 		return connection;
 
 	while(!(rt = strstr(connection->buffer,"\n"))) {
@@ -409,7 +476,7 @@ mpd_Connection * mpd_newConnection(const char * host, int port, float timeout) {
 	strcpy(connection->buffer,rt+1);
 	connection->buflen = strlen(connection->buffer);
 
-	if(mpd_parseWelcome(connection,host,port,rt,output) == 0) connection->doneProcessing = 1;
+	if(mpd_parseWelcome(connection,host,port,output) == 0) connection->doneProcessing = 1;
 
 	free(output);
 
@@ -429,11 +496,11 @@ void mpd_closeConnection(mpd_Connection * connection) {
 	WSACleanup();
 }
 
-static void mpd_executeCommand(mpd_Connection * connection, char * command) {
+void mpd_executeCommand(mpd_Connection * connection, const char * command) {
 	int ret;
 	struct timeval tv;
 	fd_set fds;
-	char * commandPtr = command;
+	const char * commandPtr = command;
 	int commandLen = strlen(command);
 
 	if(!connection->doneProcessing && !connection->commandList) {
@@ -672,11 +739,13 @@ mpd_Status * mpd_getStatus(mpd_Connection * connection) {
 	status->volume = -1;
 	status->repeat = 0;
 	status->random = 0;
+	status->single = 0;
+	status->consume = 0;
 	status->playlist = -1;
 	status->playlistLength = -1;
 	status->state = -1;
 	status->song = 0;
-	status->songid = 0;
+	status->songid = -1;
 	status->elapsedTime = 0;
 	status->totalTime = 0;
 	status->bitRate = 0;
@@ -701,6 +770,12 @@ mpd_Status * mpd_getStatus(mpd_Connection * connection) {
 		}
 		else if(strcmp(re->name,"random")==0) {
 			status->random = atoi(re->value);
+		}
+		else if(strcmp(re->name,"single")==0) {
+			status->single = atoi(re->value);
+		}
+		else if(strcmp(re->name,"consume")==0) {
+			status->consume = atoi(re->value);
 		}
 		else if(strcmp(re->name,"playlist")==0) {
 			status->playlist = strtol(re->value,NULL,10);
@@ -930,17 +1005,18 @@ static void mpd_initSong(mpd_Song * song) {
 }
 
 static void mpd_finishSong(mpd_Song * song) {
-	if(song->file) free(song->file);
-	if(song->artist) free(song->artist);
-	if(song->album) free(song->album);
-	if(song->title) free(song->title);
-	if(song->track) free(song->track);
-	if(song->name) free(song->name);
-	if(song->date) free(song->date);
-	if(song->genre) free(song->genre);
-	if(song->composer) free(song->composer);
-	if(song->disc) free(song->disc);
-	if(song->comment) free(song->comment);
+	if(song->file) str_pool_put(song->file);
+	if(song->artist) str_pool_put(song->artist);
+	if(song->album) str_pool_put(song->album);
+	if(song->title) str_pool_put(song->title);
+	if(song->track) str_pool_put(song->track);
+	if(song->name) str_pool_put(song->name);
+	if(song->date) str_pool_put(song->date);
+	if(song->genre) str_pool_put(song->genre);
+	if(song->composer) str_pool_put(song->composer);
+	if(song->performer) str_pool_put(song->performer);
+	if(song->disc) str_pool_put(song->disc);
+	if(song->comment) str_pool_put(song->comment);
 }
 
 mpd_Song * mpd_newSong(void) {
@@ -959,17 +1035,18 @@ void mpd_freeSong(mpd_Song * song) {
 mpd_Song * mpd_songDup(mpd_Song * song) {
 	mpd_Song * ret = mpd_newSong();
 
-	if(song->file) ret->file = strdup(song->file);
-	if(song->artist) ret->artist = strdup(song->artist);
-	if(song->album) ret->album = strdup(song->album);
-	if(song->title) ret->title = strdup(song->title);
-	if(song->track) ret->track = strdup(song->track);
-	if(song->name) ret->name = strdup(song->name);
-	if(song->date) ret->date = strdup(song->date);
-	if(song->genre) ret->genre= strdup(song->genre);
-	if(song->composer) ret->composer= strdup(song->composer);
-	if(song->disc) ret->disc = strdup(song->disc);
-	if(song->comment) ret->comment = strdup(song->comment);
+	if(song->file) ret->file = str_pool_dup(song->file);
+	if(song->artist) ret->artist = str_pool_dup(song->artist);
+	if(song->album) ret->album = str_pool_dup(song->album);
+	if(song->title) ret->title = str_pool_dup(song->title);
+	if(song->track) ret->track = str_pool_dup(song->track);
+	if(song->name) ret->name = str_pool_dup(song->name);
+	if(song->date) ret->date = str_pool_dup(song->date);
+	if(song->genre) ret->genre= str_pool_dup(song->genre);
+	if(song->composer) ret->composer= str_pool_dup(song->composer);
+	if(song->performer) ret->performer = str_pool_dup(song->performer);
+	if(song->disc) ret->disc = str_pool_dup(song->disc);
+	if(song->comment) ret->comment = str_pool_dup(song->comment);
 	ret->time = song->time;
 	ret->pos = song->pos;
 	ret->id = song->id;
@@ -982,7 +1059,8 @@ static void mpd_initDirectory(mpd_Directory * directory) {
 }
 
 static void mpd_finishDirectory(mpd_Directory * directory) {
-	if(directory->path) free(directory->path);
+	if(directory->path)
+		str_pool_put(directory->path);
 }
 
 mpd_Directory * mpd_newDirectory(void) {
@@ -1002,7 +1080,8 @@ void mpd_freeDirectory(mpd_Directory * directory) {
 mpd_Directory * mpd_directoryDup(mpd_Directory * directory) {
 	mpd_Directory * ret = mpd_newDirectory();
 
-	if(directory->path) ret->path = strdup(directory->path);
+	if(directory->path)
+		ret->path = str_pool_dup(directory->path);
 
 	return ret;
 }
@@ -1012,7 +1091,8 @@ static void mpd_initPlaylistFile(mpd_PlaylistFile * playlist) {
 }
 
 static void mpd_finishPlaylistFile(mpd_PlaylistFile * playlist) {
-	if(playlist->path) free(playlist->path);
+	if(playlist->path)
+		str_pool_put(playlist->path);
 }
 
 mpd_PlaylistFile * mpd_newPlaylistFile(void) {
@@ -1031,7 +1111,8 @@ void mpd_freePlaylistFile(mpd_PlaylistFile * playlist) {
 mpd_PlaylistFile * mpd_playlistFileDup(mpd_PlaylistFile * playlist) {
 	mpd_PlaylistFile * ret = mpd_newPlaylistFile();
 
-	if(playlist->path) ret->path = strdup(playlist->path);
+	if(playlist->path)
+		ret->path = str_pool_dup(playlist->path);
 
 	return ret;
 }
@@ -1088,7 +1169,7 @@ mpd_InfoEntity * mpd_getNextInfoEntity(mpd_Connection * connection) {
 			entity->type = MPD_INFO_ENTITY_TYPE_SONG;
 			entity->info.song = mpd_newSong();
 			entity->info.song->file =
-				strdup(connection->returnElement->value);
+				str_pool_dup(connection->returnElement->value);
 		}
 		else if(strcmp(connection->returnElement->name,
 					"directory")==0) {
@@ -1096,14 +1177,14 @@ mpd_InfoEntity * mpd_getNextInfoEntity(mpd_Connection * connection) {
 			entity->type = MPD_INFO_ENTITY_TYPE_DIRECTORY;
 			entity->info.directory = mpd_newDirectory();
 			entity->info.directory->path =
-				strdup(connection->returnElement->value);
+				str_pool_dup(connection->returnElement->value);
 		}
 		else if(strcmp(connection->returnElement->name,"playlist")==0) {
 			entity = mpd_newInfoEntity();
 			entity->type = MPD_INFO_ENTITY_TYPE_PLAYLISTFILE;
 			entity->info.playlistFile = mpd_newPlaylistFile();
 			entity->info.playlistFile->path =
-				strdup(connection->returnElement->value);
+				str_pool_dup(connection->returnElement->value);
 		}
 		else if(strcmp(connection->returnElement->name, "cpos") == 0){
 			entity = mpd_newInfoEntity();
@@ -1132,23 +1213,23 @@ mpd_InfoEntity * mpd_getNextInfoEntity(mpd_Connection * connection) {
 				strlen(re->value)) {
 			if(!entity->info.song->artist &&
 					strcmp(re->name,"Artist")==0) {
-				entity->info.song->artist = strdup(re->value);
+				entity->info.song->artist = str_pool_dup(re->value);
 			}
 			else if(!entity->info.song->album &&
 					strcmp(re->name,"Album")==0) {
-				entity->info.song->album = strdup(re->value);
+				entity->info.song->album = str_pool_dup(re->value);
 			}
 			else if(!entity->info.song->title &&
 					strcmp(re->name,"Title")==0) {
-				entity->info.song->title = strdup(re->value);
+				entity->info.song->title = str_pool_dup(re->value);
 			}
 			else if(!entity->info.song->track &&
 					strcmp(re->name,"Track")==0) {
-				entity->info.song->track = strdup(re->value);
+				entity->info.song->track = str_pool_dup(re->value);
 			}
 			else if(!entity->info.song->name &&
 					strcmp(re->name,"Name")==0) {
-				entity->info.song->name = strdup(re->value);
+				entity->info.song->name = str_pool_dup(re->value);
 			}
 			else if(entity->info.song->time==MPD_SONG_NO_TIME &&
 					strcmp(re->name,"Time")==0) {
@@ -1164,27 +1245,45 @@ mpd_InfoEntity * mpd_getNextInfoEntity(mpd_Connection * connection) {
 			}
 			else if(!entity->info.song->date &&
 					strcmp(re->name, "Date") == 0) {
-				entity->info.song->date = strdup(re->value);
+				entity->info.song->date = str_pool_dup(re->value);
 			}
 			else if(!entity->info.song->genre &&
 					strcmp(re->name, "Genre") == 0) {
-				entity->info.song->genre = strdup(re->value);
+				entity->info.song->genre = str_pool_dup(re->value);
 			}
-			else if(!entity->info.song->composer &&
-					strcmp(re->name, "Composer") == 0) {
-				entity->info.song->composer = strdup(re->value);
+			else if(strcmp(re->name, "Composer") == 0) {
+				char *tmp = 0;
+				if (entity->info.song->composer) {
+					tmp = malloc(strlen(entity->info.song->composer) + strlen(re->value) + 3);
+					sprintf(tmp, "%s, %s", entity->info.song->composer, re->value);
+					str_pool_put(entity->info.song->composer);
+				}
+				entity->info.song->composer = tmp ? str_pool_get(tmp) : str_pool_dup(re->value);
+				free(tmp);
 			}
-			else if(!entity->info.song->performer &&
-					strcmp(re->name, "Performer") == 0) {
-				entity->info.song->performer = strdup(re->value);
+			else if(strcmp(re->name, "Performer") == 0) {
+				char *tmp = 0;
+				if (entity->info.song->performer) {
+					tmp = malloc(strlen(entity->info.song->performer) + strlen(re->value) + 3);
+					sprintf(tmp, "%s, %s", entity->info.song->performer, re->value);
+					str_pool_put(entity->info.song->performer);
+				}
+				entity->info.song->performer = tmp ? str_pool_get(tmp) : str_pool_dup(re->value);
+				free(tmp);
 			}
-			else if(!entity->info.song->disc &&
-					strcmp(re->name, "Disc") == 0) {
-				entity->info.song->disc = strdup(re->value);
+			else if(strcmp(re->name, "Disc") == 0) {
+				char *tmp = 0;
+				if (entity->info.song->disc) {
+					tmp = malloc(strlen(entity->info.song->disc) + strlen(re->value) + 3);
+					sprintf(tmp, "%s, %s", entity->info.song->disc, re->value);
+					str_pool_put(entity->info.song->disc);
+				}
+				entity->info.song->disc = tmp ? str_pool_get(tmp) : str_pool_dup(re->value);
+				free(tmp);
 			}
 			else if(!entity->info.song->comment &&
 					strcmp(re->name, "Comment") == 0) {
-				entity->info.song->comment = strdup(re->value);
+				entity->info.song->comment = str_pool_dup(re->value);
 			}
 		}
 		else if(entity->type == MPD_INFO_ENTITY_TYPE_DIRECTORY) {
@@ -1324,12 +1423,44 @@ void mpd_sendListCommand(mpd_Connection * connection, int table,
 	char st[10];
 	int len;
 	char *string;
-	if(table == MPD_TABLE_ARTIST) strcpy(st,"artist");
-	else if(table == MPD_TABLE_ALBUM) strcpy(st,"album");
-	else {
-		connection->error = 1;
-		strcpy(connection->errorStr,"unknown table for list");
-		return;
+	switch(table) {
+		case MPD_TABLE_ARTIST:
+			strcpy(st,"artist");
+			break;
+		case MPD_TABLE_ALBUM:
+			strcpy(st,"album");
+			break;
+		case MPD_TABLE_TITLE:
+			strcpy(st,"title");
+			break;
+		case MPD_TABLE_TRACK:
+			strcpy(st,"track");
+			break;
+		case MPD_TABLE_GENRE:
+			strcpy(st,"genre");
+			break;
+		case MPD_TABLE_DATE:
+			strcpy(st,"date");
+			break;
+		case MPD_TABLE_COMPOSER:
+			strcpy(st,"composer");
+			break;
+		case MPD_TABLE_PERFORMER:
+			strcpy(st,"performer");
+			break;
+		case MPD_TABLE_COMMENT:
+			strcpy(st,"comment");
+			break;
+		case MPD_TABLE_DISC:
+			strcpy(st,"disc");
+			break;
+		case MPD_TABLE_FILENAME:
+			strcpy(st,"filename");
+			break;
+		default:
+			connection->error = 1;
+			strcpy(connection->errorStr,"unknown table for list");
+			return;
 	}
 	if(arg1) {
 		char * sanitArg1 = mpd_sanitizeArg(arg1);
@@ -1526,7 +1657,7 @@ void mpd_sendSeekIdCommand(mpd_Connection * connection, int id, int time) {
 	free(string);
 }
 
-void mpd_sendUpdateCommand(mpd_Connection * connection, char * path) {
+void mpd_sendUpdateCommand(mpd_Connection * connection, const char * path) {
 	char * sPath = mpd_sanitizeArg(path);
 	int len = strlen("update")+2+strlen(sPath)+3;
 	char *string = malloc(len);
@@ -1565,6 +1696,22 @@ void mpd_sendRandomCommand(mpd_Connection * connection, int randomMode) {
 	int len = strlen("random")+2+INTLEN+3;
 	char *string = malloc(len);
 	snprintf(string, len, "random \"%i\"\n", randomMode);
+	mpd_executeCommand(connection,string);
+	free(string);
+}
+
+void mpd_sendSingleCommand(mpd_Connection * connection, int singleMode) {
+	int len = strlen("single")+2+INTLEN+3;
+	char *string = malloc(len);
+	snprintf(string, len, "single \"%i\"\n", singleMode);
+	mpd_executeCommand(connection,string);
+	free(string);
+}
+
+void mpd_sendConsumeCommand(mpd_Connection * connection, int consumeMode) {
+	int len = strlen("consume")+2+INTLEN+3;
+	char *string = malloc(len);
+	snprintf(string, len, "consume \"%i\"\n", consumeMode);
 	mpd_executeCommand(connection,string);
 	free(string);
 }
@@ -1874,7 +2021,7 @@ void mpd_commitSearch(mpd_Connection *connection)
  * List the content, with full metadata, of a stored playlist.
  *
  */
-void mpd_sendListPlaylistInfoCommand(mpd_Connection *connection, char *path)
+void mpd_sendListPlaylistInfoCommand(mpd_Connection *connection, const char *path)
 {
 	char *arg = mpd_sanitizeArg(path);
 	int len = strlen("listplaylistinfo")+2+strlen(arg)+3;
@@ -1903,7 +2050,7 @@ void mpd_sendListPlaylistCommand(mpd_Connection *connection, char *path)
 	free(query);
 }
 
-void mpd_sendPlaylistClearCommand(mpd_Connection *connection, char *path)
+void mpd_sendPlaylistClearCommand(mpd_Connection *connection, const char *path)
 {
 	char *sPath = mpd_sanitizeArg(path);
 	int len = strlen("playlistclear")+2+strlen(sPath)+3;
@@ -1915,7 +2062,7 @@ void mpd_sendPlaylistClearCommand(mpd_Connection *connection, char *path)
 }
 
 void mpd_sendPlaylistAddCommand(mpd_Connection *connection,
-                                char *playlist, char *path)
+                                const char *playlist, const char *path)
 {
 	char *sPlaylist = mpd_sanitizeArg(playlist);
 	char *sPath = mpd_sanitizeArg(path);
@@ -1929,7 +2076,7 @@ void mpd_sendPlaylistAddCommand(mpd_Connection *connection,
 }
 
 void mpd_sendPlaylistMoveCommand(mpd_Connection *connection,
-                                 char *playlist, int from, int to)
+                                 const char *playlist, int from, int to)
 {
 	char *sPlaylist = mpd_sanitizeArg(playlist);
 	int len = strlen("playlistmove")+
@@ -1943,7 +2090,7 @@ void mpd_sendPlaylistMoveCommand(mpd_Connection *connection,
 }
 
 void mpd_sendPlaylistDeleteCommand(mpd_Connection *connection,
-                                   char *playlist, int pos)
+                                   const char *playlist, int pos)
 {
 	char *sPlaylist = mpd_sanitizeArg(playlist);
 	int len = strlen("playlistdelete")+2+strlen(sPlaylist)+3+INTLEN+3;

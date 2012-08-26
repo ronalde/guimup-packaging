@@ -1,7 +1,7 @@
 /*
  *  gm_commandlist.h
  *  GUIMUP struct to pass commands to mpd
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -48,6 +48,8 @@ typedef struct gm_cmdStruct
     ustring artist;
     ustring album;
     ustring title;
+	ustring track;
+	ustring genre;
 } gm_cmdStruct;
 
 

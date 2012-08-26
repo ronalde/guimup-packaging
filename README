@@ -1,22 +1,23 @@
     ______________________________________________________________________
 
     GUIMUP     
-    version 0.1.4
+    version 0.2.0
 
     for MPD 0.12 and above
 
     Copyright (C) 2008 - 2009 Johan Spee
     www.coonsden.com
+
     ______________________________________________________________________
 
-    GUIMUP is a client for the Music Player Daemon (MPD) written in GTKMM and
-    C++. The program can be used with most Linux desktops (GNOME, XFCE, KDE)
-    and is covered by the General Public License (see LICENSE below).
+    GUIMUP is a client for the Music Player Daemon (MPD) written in GTKMM
+    and C++. The program can be used with most Linux desktops (GNOME, 
+    XFCE, KDE) and is covered by the General Public License (see below).
 
-    The clean interface makes controlling MPD's many features easy and intuitive.
-    The focus is on mouse handling: playlist management is done entirely by
-    drag-&-drop; playback functions are directly accessible from the system tray.
-    Guimup turns MPD into a perfect desktop music player.
+    The clean interface makes controlling MPD's many features easy and 
+    intuitive. The focus is on mouse handling: playlist management is done 
+    entirely by drag-&-drop; playback functions are directly accessible from
+    the system tray. Guimup turns MPD into a perfect desktop music player.
     ______________________________________________________________________
 
     LICENSE
@@ -35,20 +36,26 @@
     along with this program (the file named COPYING).
     If not, see http://www.gnu.org/licenses/
     ______________________________________________________________________
+
+    GUIMUP includes libmpdclient:
+    (c) 2003-2008 The Music Player Daemon Project
+    ______________________________________________________________________
     
     DEPENDENCIES
 
-    To RUN this program depends on GTKMM (libgtkmm 2.4 or above), which has
-    dependencies of its own.
+    To RUN this program depends on:
+    gtkmm  (libgtkmm-2.4,  2.16 or above, which has dependencies of its own).
+    libsoup (libsoup-2.4,  2.26 or above)
  
-    To COMPILE from source additionally install libgtkmm-2.4-dev (2.4 or above).
-    You will also need the usual dev packages, such as autoconf, make, automake
-    and intltool. 'configure' will check this.
+    To COMPILE from source additionally install the libgtkmm dev and libsoup
+    dev packages.
+    You will also need the usual dev packages, such as autoconf, make,
+    automake and intltool. 'configure' will check this.
     
     To compile type:
     ./configure
     make
-    sudo make install
+    sudo make install (will only copy the binary to /usr/bin)
     ______________________________________________________________________
 
     GNOME, XFCE and KDE
@@ -60,5 +67,24 @@
     USING GUIMUP
 
     If MPD is configured correctly it's all click, drag and drop really.
+
+    The URL handling ("Add Stream") is rather basic. Direct links to binary
+    audio-streams are added without a problem. Playlists of the m3u and pls
+    format are processed to pick out the links pointing to the stream(s).
+    Other playlist formats (asx, ram etc.) can not be handled. URL's that
+    redirect can not be handled. Alternatively download the playlist yourself,
+    copy the URL(s) that are in it and paste it in the "Add Stream" dialog.
+
+    In the ~/.guimup.conf file you will find an entry called AlbumArt_File
+    Here you can set a custom string that will be used first to find art
+    in the folder where the music-file is located. 
+    Example: AlbumArt_File=younameit
+
+    Other 'hidden' options are:
+    Font_Family=sans, DejaVu		(or =serif, Times )
+    MPD_onQuit_command=mpd --kill	(or =killall mpd )
+    MPD_onStart_command=mpd		(or =/path/to/mpd )
+
+
     ______________________________________________________________________
     

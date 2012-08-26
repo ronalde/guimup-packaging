@@ -1,7 +1,7 @@
 /*
  *  gm_itemlist.h
  *  GUIMUP struct for datatree item data
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -53,6 +53,7 @@ public:
 	ustring track;
 	ustring name;
 	ustring date;
+	ustring genre;
 	ustring sorter;
 	
 	// Override the < operator for mylist.sort();

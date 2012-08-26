@@ -1,7 +1,7 @@
 /*
  *  gm_config.cc
  *  GUIMUP configuration class
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -29,56 +29,113 @@ gm_Config::gm_Config()
 	if (homeDir.rfind("/") != homeDir.length()-1)
 		homeDir += "/";
     path_file = homeDir + ".guimup.conf";
+
+	bool b_no_config = false;
 	
-	// server related default values
-	set_bool("QuitMPD_onQuit",			false);
-	set_string("MPD_onQuit_command",	"mpd --kill");
-	set_bool("StartMPD_onStart",		true);
-	set_string("MPD_onStart_command",	"mpd");
-	set_bool("AutoConnect",				true);
-	set_bool("OverrideMPDconf",			false);
-	set_string("MPD_Host",				"localhost");
-	set_int("MPD_Port",					6600);
-	set_string("MPD_Password",			"");
-	set_string("MPD_MusicPath",			"");
-	set_string("MPD_PlaylistPath",		"");
-	// 'player' related default values
-	set_string("AlbumArt_File",			"unameit");
-	set_int("Scroller_Delay",			60);
-	set_int("PlayerWindow_Xpos",		300);
-	set_int("PlayerWindow_Ypos",		200);
-	set_bool("PlayerWindow_Max",		true);
-	set_bool("use_TrayIcon",	 		true);
-	set_bool("use_TimeRemaining",		false);
-	// 'tracks window' default values
-	set_int("TracksWindow_Xpos",		300);
-	set_int("TracksWindow_Ypos",		200);
-	set_int("TracksWindow_W",			600);
-	set_int("TracksWindow_H",			360);
-	set_int("TracksWindow_panePos",		160);
-	set_int("Tracks_DBmode",			0);
-	// 'settings window' default values
-	set_int("SettingsWindow_Xpos",		300);
-	set_int("SettingsWindow_Ypos",		200);
-	// default font & sizes
-	set_string("Font_Family",			"Sans, Helvetica");	
-	set_int("Scroller_Fontsize",		12);
-	set_int("TrackInfo_Fontsize",		10);
-	set_int("Time_Fontsize",			12);
-	set_int("Album_Fontsize",			11);
-	set_int("Tracks_Fontsize",			12);
-	// tooltips
-	set_bool("show_ToolTips",			true);
 	// check if the config file exists
 	if (!check_config_file())
 	{
-		if (!save_config())
-			cout << "Config: file not found and could not be created." << endl;
-		else
-			cout << "Config: file not found, but was created."<< endl;
+		b_no_config = true;
 	}
 	else
+	{
 		cout << "Config: using " << path_file << endl;
+		if (!load_config())
+		{
+			cout << "Config: file could not be opened." << endl;
+			b_no_config = true;
+		}
+	}
+	
+	// server related default values
+	if (b_no_config | !get("QuitMPD_onQuit", QuitMPD_onQuit))
+		QuitMPD_onQuit = false;
+	if (b_no_config | !get("MPD_onQuit_command", MPD_onQuit_command))
+		MPD_onQuit_command  =   "mpd --kill";
+	if (b_no_config | !get("StartMPD_onStart", StartMPD_onStart))
+		StartMPD_onStart = true;
+	if (b_no_config | !get("MPD_onStart_command", MPD_onStart_command))
+		MPD_onStart_command = "mpd";
+	if (b_no_config | !get("AutoConnect",AutoConnect))
+		AutoConnect = true;
+	if (b_no_config | !get("OverrideMPDconf", OverrideMPDconf))
+		OverrideMPDconf = false;
+	if (b_no_config | !get("MPD_Host", MPD_Host))
+		MPD_Host = "localhost";
+	if (b_no_config | !get("MPD_Port", MPD_Port))
+		MPD_Port =  6600;
+	if (b_no_config | !get("MPD_Password", MPD_Password))
+		MPD_Password = "";
+	if (b_no_config | !get("MPD_MusicPath", MPD_MusicPath))
+		MPD_MusicPath = "";
+	if (b_no_config | !get("MPD_PlaylistPath", MPD_PlaylistPath))
+		MPD_PlaylistPath = "";
+	// 'player' related default 
+	if (b_no_config | !get("Tag_Editor", Tag_Editor))
+		Tag_Editor = "easytag";
+	if (b_no_config | !get("Art_Viewer", Art_Viewer))
+		Art_Viewer = "eog";	
+	if (b_no_config | !get("AlbumArt_File", AlbumArt_File))
+		AlbumArt_File = "";
+	if (b_no_config | !get("Scroller_Delay", Scroller_Delay))
+		Scroller_Delay = 60;
+	if (b_no_config | !get("PlayerWindow_Xpos", PlayerWindow_Xpos))
+		PlayerWindow_Xpos = 300;
+	if (b_no_config | !get("PlayerWindow_Ypos", PlayerWindow_Ypos))
+		PlayerWindow_Ypos = 200;
+	if (b_no_config | !get("PlayerWindow_Max", PlayerWindow_Max))
+		PlayerWindow_Max = true;
+	if (b_no_config | !get("use_TrayIcon", use_TrayIcon))
+		use_TrayIcon = true;
+	if (b_no_config | !get("use_TimeRemaining", use_TimeRemaining))
+		use_TimeRemaining = false;
+	if (b_no_config | !get("toggle_Player", toggle_Player))
+		toggle_Player = true;
+	// 'library window' default values
+	if (b_no_config | !get("libraryWindow_Xpos", libraryWindow_Xpos))
+		libraryWindow_Xpos = 300;
+	if (b_no_config | !get("libraryWindow_Ypos", libraryWindow_Ypos))
+		libraryWindow_Ypos = 200;
+	if (b_no_config | !get("libraryWindow_W", libraryWindow_W))
+		libraryWindow_W = 600;
+	if (b_no_config | !get("libraryWindow_H", libraryWindow_H))
+		libraryWindow_H = 360;
+	if (b_no_config | !get("libraryWindow_panePos", libraryWindow_panePos))
+		libraryWindow_panePos = 160;
+	if (b_no_config | !get("library_DBmode", library_DBmode))
+		library_DBmode = 0;
+	if (b_no_config | !get("toggle_Library", toggle_Library))
+		toggle_Library = true;	
+	// 'settings window' default values
+	if (b_no_config | !get("SettingsWindow_Xpos", SettingsWindow_Xpos))
+		SettingsWindow_Xpos = 300;
+	if (b_no_config | !get("SettingsWindow_Ypos", SettingsWindow_Ypos))
+		SettingsWindow_Ypos = 200;
+	// default font & sizes
+	if (b_no_config | !get("Font_Family", Font_Family))
+		Font_Family = "Sans, DejaVu";
+	if (b_no_config | !get("Scroller_Fontsize", Scroller_Fontsize))
+		Scroller_Fontsize = 11;
+	if (b_no_config | !get("TrackInfo_Fontsize", TrackInfo_Fontsize))
+		TrackInfo_Fontsize = 9;
+	if (b_no_config | !get("Time_Fontsize", Time_Fontsize))
+		Time_Fontsize = 11;
+	if (b_no_config | !get("Album_Fontsize", Album_Fontsize))
+		Album_Fontsize = 10;
+	if (b_no_config | !get("library_Fontsize", library_Fontsize))
+		library_Fontsize = 11;
+	// general
+	if (b_no_config | !get("show_ToolTips", show_ToolTips))
+		show_ToolTips = true;
+	
+	if (b_no_config)
+	{
+		if (save_config())
+			cout << "Config: file successfully created." << endl;
+		else
+			cout << "Config: file could not be created."<< endl;
+	}
+
 }
 
 
@@ -97,7 +154,7 @@ bool gm_Config::check_config_file()
 
 
 // Add a ustring item
-void gm_Config::set_string(ustring key, ustring value)
+void gm_Config::set(ustring key, ustring value)
 {
 	bool keyfound = false;
 	
@@ -122,7 +179,7 @@ void gm_Config::set_string(ustring key, ustring value)
 }
 
 // Add a int item
-void gm_Config::set_int(ustring key, int value)
+void gm_Config::set(ustring key, int value)
 {
 	bool keyfound = false;
 
@@ -153,7 +210,7 @@ void gm_Config::set_int(ustring key, int value)
 }
 
 // Add a string item
-void gm_Config::set_bool(const ustring key, bool value)
+void gm_Config::set(const ustring key, bool value)
 {
 	bool keyfound = false;
 	
@@ -208,7 +265,7 @@ bool gm_Config::load_config()
 			while (value.rfind("\n") == value.length()-1 || value.rfind(" ") == value.length()-1)
 				value = value.substr(0, value.length()-1);
 
-			set_string(key, value);
+			set(key, value);
 		}
    		conffile.close();
     }
@@ -224,6 +281,50 @@ bool gm_Config::load_config()
 // Save the options in a config file
 bool gm_Config::save_config()
 {
+	// server related default values
+	set("QuitMPD_onQuit", QuitMPD_onQuit);
+	set("MPD_onQuit_command", MPD_onQuit_command);
+	set("StartMPD_onStart", StartMPD_onStart);
+	set("MPD_onStart_command", MPD_onStart_command);
+	set("AutoConnect",AutoConnect);
+	set("OverrideMPDconf", OverrideMPDconf);
+	set("MPD_Host", MPD_Host);
+	set("MPD_Port", MPD_Port);
+	set("MPD_Password", MPD_Password);
+	set("MPD_MusicPath", MPD_MusicPath);
+	set("MPD_PlaylistPath", MPD_PlaylistPath);
+	// 'player' related default 
+	set("Tag_Editor", Tag_Editor);
+	set("Art_Viewer", Art_Viewer);
+	set("AlbumArt_File", AlbumArt_File);
+	set("Scroller_Delay", Scroller_Delay);
+	set("PlayerWindow_Xpos", PlayerWindow_Xpos);
+	set("PlayerWindow_Ypos", PlayerWindow_Ypos);
+	set("PlayerWindow_Max", PlayerWindow_Max);
+	set("use_TrayIcon", use_TrayIcon);
+	set("use_TimeRemaining", use_TimeRemaining);
+	set("toggle_Player", toggle_Player);
+	// 'library window' default values
+	set("libraryWindow_Xpos", libraryWindow_Xpos);
+	set("libraryWindow_Ypos", libraryWindow_Ypos);
+	set("libraryWindow_W", libraryWindow_W);
+	set("libraryWindow_H", libraryWindow_H);
+	set("libraryWindow_panePos", libraryWindow_panePos);
+	set("library_DBmode", library_DBmode);
+	set("toggle_Library", toggle_Library);
+	// 'settings window' default values
+	set("SettingsWindow_Xpos", SettingsWindow_Xpos);
+	set("SettingsWindow_Ypos", SettingsWindow_Ypos);
+	// default font & sizes
+	set("Font_Family", Font_Family);
+	set("Scroller_Fontsize", Scroller_Fontsize);
+	set("TrackInfo_Fontsize", TrackInfo_Fontsize);
+	set("Time_Fontsize", Time_Fontsize);
+	set("Album_Fontsize", Album_Fontsize);
+	set("library_Fontsize", library_Fontsize);
+	// general
+	set("show_ToolTips", show_ToolTips);
+	
 	bool result = true;
 	std::ofstream conffile (path_file.data());
 	if (conffile.is_open())
@@ -249,9 +350,9 @@ bool gm_Config::save_config()
 
 
 // get the ustring value of "key"
-ustring gm_Config::get_string(ustring key)
+bool gm_Config::get(ustring key, ustring &theString)
 {
-	ustring result = "";
+	ustring result;
 	bool found = false;
   	std::list<confitem>::iterator it;
 	for (it = items.begin(); it != items.end(); ++it)
@@ -264,14 +365,20 @@ ustring gm_Config::get_string(ustring key)
 		}
 	}
 	if (!found)
-		cout << "Config: string \"" << key << "\" is unknown" << endl;
-    return result;
+	{
+		return false;
+	}
+	else
+	{
+		theString = result;
+		return true;
+	}
 }
 
 // Get the int value of "key"
-int gm_Config::get_int(ustring key)
+bool gm_Config::get(ustring key, int &theInt)
 {
-	int result = -1;
+	int result;
 	bool found = false;
   	std::list<confitem>::iterator it;
 	for (it = items.begin(); it != items.end(); ++it)
@@ -286,12 +393,18 @@ int gm_Config::get_int(ustring key)
 		}
 	}
 	if (!found)
-		cout << "Config: int \"" << key << "\" is unknown" << endl;
-    return result;
+	{
+		return false;
+	}
+	else
+	{
+		theInt = result;
+		return true;
+	}
 }
 
 // Get the boolean value of "key"
-bool gm_Config::get_bool(ustring key)
+bool gm_Config::get(ustring key, bool &theBool)
 {
 	bool result = false;
 	bool found = false;
@@ -309,8 +422,14 @@ bool gm_Config::get_bool(ustring key)
 		}
 	}
 	if (!found)
-		cout << "Config: bool \"" << key << "\" is unknown" << endl;
-    return result;
+	{
+		return false;
+	}
+	else
+	{
+		theBool = result;
+		return true;
+	}
 }
 
 

@@ -1,7 +1,7 @@
 /*
  *  gm_settings_pix.h
  *  GUIMUP inline image resources for settings window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -22,7 +22,8 @@
 #ifndef GM_SETTINGS_PIX_H
 #define GM_SETTINGS_PIX_H
 
-#include "grafix/mn_config.h"
+#include "grafix/mn_icon16.h"
+#include "grafix/mn_icon24.h"
 #include "grafix/mn_icon32.h"
 #include "grafix/con_dis.h"
 #include "grafix/con_ok.h"

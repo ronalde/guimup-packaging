@@ -1,11 +1,70 @@
 Guimup Change Log
 
 version x.y.z
-x = major   y = minor   z = update
+x = superior   y = major   z = minor
 
-v  0.1.4b
 
-Bugfix: The program could crash when MPD was not running (or was killed).
+v. 0.2.0	2009 06 01
+
+Changed: DEPENDS ON libgtkmm-2.4 [2.16 or above] !
+  Added: DEPENDS ON libsoup-2.4  [2.26 or above] !
+
+PLAYER:
+  Added: The player now has a R-click context menu to:
+		* View and browse albumart in a viewer of your choice.
+		* Open directory in a tag editor of your choice.
+		* Update the database for the current directory only.
+		* Open the current directory in the default file manager.
+  Added: Title scroller responds to "stop" and "pause" (when scrolling).
+  Added: Title scroller fades in and out (when scrolling). Cool!
+  Added: Title scroller accelerates on mouse-over (when scrolling).
+  Added: Comment is shown below the album title/year.
+ Hacked: Volume slider scrolled-up as if it were a scroll-down and vice versa.
+Removed: The track info panel is no more (as is the button to open it).
+Removed: The repeat and random buttons (now in playlist context menu).
+
+LIBRARY:
+Changed: Library window was rearranged and graphics are added to the buttons.
+ Hacked: Long standing Gtk bug that unselects all items when drag is started.
+  Added: Datatree has R-click menu to quick-select the data-mode.
+  Added: 'Repeat' and 'Random' can now be found in the playlist R-click menu.
+  Added: MPD 0.15 features 'Single' and 'Consume' are also in the R-click menu.
+Changed: A drag will now only drop BETWEEN target library, not ON them.
+Changed: Better auto-scroll when a drag reaches the top or bottom of the list.
+  Added: Playlist now can search and quick-select library matching a string.
+  Added: Playlist jumps to current song when space-bar is pressed.
+  Added: "Smart select" prevents selecting multiple instances of an item.
+  Added: Library now has a dialog to add streams (pls, m3u or binary).
+Changed: Saved streams are named as "Stream : the_full_url"
+Changed: Folders are sorted by modification date. (What album did I just add?)
+Changed: In album-mode, a dragged album now will add songs sorted by artist.
+  Fixed: Segfault when using a saved playlist with non-existent items.
+  Fixed: After deleting current song and all below it the playlist had no focus.
+  Fixed: Some minor flaws in the database tree were corrected.
+
+TRAYICON
+  Added: Middle-click om tray-icon toggles play/pause.
+  Added: Scrollwheel on tray-icon controls volume.
+Changed: Tray-icon now uses a much sexier tooltip (still very basic though).
+Changed: Tray-Icon now can toggle the Player and/or the Library window.
+Changed: Tray-Icon now 'presents' the windows on the current desktop.
+Removed: Blinking of the tray-icon (who cares).
+
+GENERAL:
+Changed: Icons and text should now work better with dark themes.
+Changed: Default font is now "DejaVu" (was "Helvetica").
+Changed: Quite a bit of code "under the hood".
+Changed: Handling of missing tags is much improved (actually, it's ok now).
+Changed: "Custom album art" can now only be set by editing ~/.guimup.conf.
+Changed: Program will also check for "/.mpd/mpd.conf" (allowed in mpd 0.15)
+  Fixed: Program could not handle files without artist && album tags.
+  Fixed: When no suitable mixer is found (by MPD) the program will still run.
+  Fixed: Window positions were not always saved.
+  Fixed: The program could crash when MPD was not running (or was killed).
+  Fixed: Command line output: "No Song" is shown once only.
+  Fixed: Command line output: "Reached max playlist size" is shown once only.
+
+
 
 v. 0.1.4     2009 02 17
 

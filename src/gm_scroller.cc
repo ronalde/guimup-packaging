@@ -1,7 +1,7 @@
 /*
  *  gm_Scroller.cc
  *  GUIMUP graphical text scroller
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -39,11 +39,12 @@ gm_Scroller::gm_Scroller()
 	b_busy = false;
 	b_pause = false;
 	b_scrolling = false;
-	b_fast = false;
 	Gtk::Image::set_alignment(0.5, 0.5); // center, center
 	W_layout = H_layout = 0;
 	W_cropped = 100;
 	the_font = "sans bold 12";
+	cR = cG = cB = 255; // fade in/out color
+	/* set_events(Gdk::ENTER_NOTIFY_MASK | Gdk::LEAVE_NOTIFY_MASK); */
 }
 
 
@@ -147,12 +148,8 @@ void gm_Scroller::startScroll()
 	ptr_put = pxb_display->get_pixels();
 	all_stride = pxb_fulltext->get_rowstride();
 	crp_stride = pxb_display->get_rowstride();
-
-	int delay = steptime;
-	if (b_fast)
-		delay = 10;
 	b_scrolling = true;
-	timer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Scroller::scrollerstep), delay);
+	timer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Scroller::scrollerstep), steptime);
 }
 
 
@@ -169,7 +166,7 @@ bool gm_Scroller::scrollerstep()
 	scrollpos ++;
 	
 	if (scrollpos >= W_layout)
-		scrollpos = 0;
+		scrollpos -= W_layout;
 	
 	int channels = 3; // no alpha channel
 	
@@ -193,9 +190,34 @@ bool gm_Scroller::scrollerstep()
 			ptr_pos_put = ptr_put + put_pos;
 			ptr_pos_get = ptr_get + get_pos;
 			
-  			ptr_pos_put[0] = ptr_pos_get[0]; // R
-  			ptr_pos_put[1] = ptr_pos_get[1]; // G
-  			ptr_pos_put[2] = ptr_pos_get[2]; // B
+			if (w < 24)
+			{
+	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cR)/24; // R
+				ptr_pos_put++; 
+				ptr_pos_get++;
+	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cG)/24; // G
+				ptr_pos_put++; 
+				ptr_pos_get++;				
+	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cB)/24; // B				
+			}
+			else
+			if (w > W_cropped - 24)
+			{
+				int wr = W_cropped - w;
+	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cR)/24; // R
+				ptr_pos_put++; 
+				ptr_pos_get++;
+	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cG)/24; // G
+				ptr_pos_put++; 
+				ptr_pos_get++;				
+	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cB)/24; // B		
+			}
+			else
+			{
+	  			ptr_pos_put[0] = ptr_pos_get[0]; // R
+	  			ptr_pos_put[1] = ptr_pos_get[1]; // G
+	  			ptr_pos_put[2] = ptr_pos_get[2]; // B
+			}
 		}
 	}	
 	// display the result
@@ -216,10 +238,21 @@ void gm_Scroller::set_fg( ustring fg )
 	fg_color = fg;
 }
 
-// background color in #123def format
+// background color in #hex format
 void gm_Scroller::set_bg( ustring bg )
 {
 	bg_color = bg;
+	
+	ustring hex;
+	
+	hex = bg.substr(1, 2);
+	sscanf(hex.data(), "%X", &cR );
+	
+	hex = bg.substr(3, 2);
+	sscanf(hex.data(), "%X", &cG );
+	
+	hex = bg.substr(5, 2);	
+	sscanf(hex.data(), "%X", &cB );
 }
 
 // overloaded function
@@ -230,21 +263,6 @@ void gm_Scroller::set_size_request( int w, int h )
 	Gtk::Image::set_size_request(w, h);
 }
 
-// toggle step between 1 (false) and 4 pixels
-void gm_Scroller::set_fast(bool isfast)
-{
-	b_fast = isfast;
-	if (b_scrolling)
-	{
-		timer.disconnect();
-		// wait for time out!
-		while (timer) {}
-		int delay = steptime;
-		if (b_fast)
-			delay = 10;
-		timer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Scroller::scrollerstep), delay);	
-	}
-}
 
 // delay time between scroll steps (msec)
 void gm_Scroller::set_delay(int delay)
@@ -262,6 +280,33 @@ void gm_Scroller::set_font(ustring font_desc)
 		the_font = font_desc;
 	set_title(current_artist, current_title);
 }
+
+
+void gm_Scroller::on_mouse_enter()
+{
+	if (!b_scrolling)
+		return;
+	
+	timer.disconnect();
+	// wait for time out!
+	while (timer) {	}
+	
+	timer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Scroller::scrollerstep), 10);
+}
+
+
+void gm_Scroller::on_mouse_leave()
+{
+	if (!b_scrolling)
+		return;
+	
+	timer.disconnect();
+	// wait for time out!
+	while (timer) {}
+	
+	timer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Scroller::scrollerstep), steptime);
+}
+
 
 gm_Scroller::~gm_Scroller()
 {

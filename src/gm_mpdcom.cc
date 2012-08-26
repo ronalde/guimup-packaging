@@ -29,6 +29,7 @@ gm_mpdCom::gm_mpdCom()
 	b_connecting = false;
 	b_statCheckBusy = false;
 	b_dbaseUpdating = false;
+	b_no_volume = false;
 	mpdconf_path = "";
 	current_playlist = -1;
 	current_songID = -1;
@@ -44,13 +45,23 @@ gm_mpdCom::gm_mpdCom()
     std::ifstream conffile (mpdconf_path.data());
 	
     if (!conffile.is_open())
-    {	// next try /etc/mpd.conf
-        mpdconf_path = "/etc/mpd.conf";
+    {	// next try ~/.mpd/mpd.conf (since mpd 0.15)
+        mpdconf_path = homeDir + "/.mpd/mpd.conf";
         std::ifstream conffile (mpdconf_path.data());
-        if (conffile.is_open())
+        if (!conffile.is_open())
+		{   // next try /etc/.mpd/mpd.conf
+    		mpdconf_path = "/etc/mpd.conf";
+    		std::ifstream conffile (mpdconf_path.data());
+    		if (conffile.is_open())
+			{
+        		b_mpdconf_found = true;
+				conffile.close();			
+			}
+		}
+		else
 		{
             b_mpdconf_found = true;
-			conffile.close();
+			conffile.close();			
 		}
     }
     else
@@ -151,8 +162,10 @@ void gm_mpdCom::updatefile(ustring file)
 	{
 		//trigger reloading the song
 		current_songID = -1;
-		cout << "MPD database update: OK" << endl;
+		cout << "MPD updated tags in dir: OK" << endl;
 	}
+	else
+		cout << "Error updating tags in dir." << endl;
 }
 
 int gm_mpdCom::get_port()
@@ -522,27 +535,9 @@ void gm_mpdCom::next()
 	errorCheck("mpd_sendNextCommand");
 }
 
-void gm_mpdCom::set_random(bool status)
-{
-    if (conn == NULL)
-    	return;
-	mpd_sendRandomCommand(conn, status);
-	mpd_finishCommand(conn);
-	errorCheck("mpd_sendRandomCommand");
-}
-
-void gm_mpdCom::set_repeat(bool status)
-{
-    if (conn == NULL)
-    	return;
-	mpd_sendRepeatCommand(conn, status);
-	mpd_finishCommand(conn);
-	errorCheck("mpd_sendRepeatCommand");
-}
-
 void gm_mpdCom::volume_up(int i)
 {
-	if (conn == NULL)
+	if (conn == NULL || b_no_volume)
 		return;
 	int vol = current_volume + i;
 	if (vol > 100)
@@ -554,7 +549,7 @@ void gm_mpdCom::volume_up(int i)
 
 void gm_mpdCom::volume_down(int i)
 {
-	if (conn == NULL)
+	if (conn == NULL || b_no_volume)
 		return;
 	int vol = current_volume - i;
 	if (vol < 0)
@@ -566,7 +561,7 @@ void gm_mpdCom::volume_down(int i)
 
 void gm_mpdCom::set_volume(int vol)
 {
-    if (conn == NULL)
+    if (conn == NULL || b_no_volume)
     	return;
 	mpd_sendSetvolCommand(conn, vol);
 	mpd_finishCommand(conn);
@@ -638,9 +633,20 @@ bool gm_mpdCom::errorCheck(ustring action)
 
 bool gm_mpdCom::statusCheck()
 {
-	// return "false" terminates the loop
-	if (!errorCheck("Starting statusCheck"))
-		return false;
+    if (conn == NULL)
+    {
+		signal_connected.emit(false);
+		cout << "Connection lost. Reconnecting..." << endl;
+		signal_status.emit(-1, "Reconnecting...");
+		mpd_reconnect();
+		// still no luck: try to reconnect every 2 seconds
+		if (conn == NULL);
+		{
+			reconnectLoop = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_mpdCom::mpd_reconnect), 2000);
+			statusLoop.disconnect();
+			return false;
+		}
+    }
 	
 	// return "true" keeps the loop going
 	if (b_statCheckBusy)
@@ -666,15 +672,14 @@ bool gm_mpdCom::statusCheck()
     // server has not found a supported mixer
     if (servStatus->volume == MPD_STATUS_NO_VOLUME)
     {
-		signal_status.emit(MPD_STATUS_STATE_UNKNOWN, "No supported mixer found");
-    	b_statCheckBusy = false;
-		if (servStatus != NULL)
+		if (!b_no_volume)
 		{
-        	mpd_freeStatus(servStatus);
-			mpd_finishCommand(conn);
+			cout << "MPD: No supported mixer found" << endl;
+			b_no_volume = true;
 		}
-        return true;
     }
+	else
+		b_no_volume = false;
 	
 	// playlist was updated
 	if (current_playlist < servStatus->playlist)
@@ -747,6 +752,9 @@ bool gm_mpdCom::statusCheck()
 	newInfo.mpd_volume = servStatus->volume;
 	newInfo.mpd_random = servStatus->random;
 	newInfo.mpd_repeat = servStatus->repeat;
+	newInfo.mpd_single = servStatus->single;
+	newInfo.mpd_consume = servStatus->consume;
+	
 	signal_statusInfo.emit(newInfo);
 	
 	current_volume = servStatus->volume;
@@ -808,7 +816,14 @@ songInfo gm_mpdCom::get_songInfo_from(mpd_Song *theSong)
             newSong.album = "";
 		
         if (theSong->track != NULL)
+		{
             newSong.track = theSong->track;
+			// remove xx/xx format
+			newSong.track =  newSong.track.substr(0, newSong.track.find("/"));
+			// add leading zero
+			if (newSong.track.length() == 1)
+				newSong.track = "0" + newSong.track;
+		}
         else
             newSong.track = "";
 		
@@ -863,6 +878,17 @@ std::string gm_mpdCom::into_string(int in)
 	out << in;
 	str_int = out.str();
 	return str_int;	
+}
+
+void gm_mpdCom::mpd_disconnect()
+{
+	if (conn != NULL)
+	{
+		statusLoop.disconnect();
+		mpd_finishCommand(conn);
+        mpd_closeConnection(conn);
+        conn = NULL;
+	}
 }
 
 gm_mpdCom::~gm_mpdCom()

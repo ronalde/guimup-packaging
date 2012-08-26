@@ -19,7 +19,7 @@ a. Yes. Since it basically is a Gtk program it will fit GNOME (and XFCE) like a 
 
 
 q. I ran 'make install' and still can't find Guimup in my menu.
-a. Correct. You'll have to add it yourself (Use 'Alacarte' with Gnome).
+a. Correct. You'll have to add it yourself.
 
 
 q. Guimup can't find... (my music/album art/playlists).
@@ -27,7 +27,7 @@ a. Make sure ~/.mpdconf (or /etc/mpd.conf) is set up correctly: that is where gu
 
 
 q. Comment tags in mp3's are not displayed.
-a. That's a bug in MPD. Ogg-Vorbis is handled OK (and a better format anyway). (fixed in MPD 0.14.x)
+a. That's a bug in MPD, but it was fixed in MPD 0.14. Update or use the OGG format.
 
 
 q. The volume slider does not work.
@@ -54,8 +54,8 @@ q. The sound is terrible with 2 devices selected. Why?
 a. Mpd's output devices are virtual and defined in ~/.mpdconf (or /etc/mpd.conf). In turn they can refer to virtual alsa output devices, defined in .asoundrc. These virtual devices point to one or more real, hardware devices. The problems occur when a combination of mpd's output devices uses the same hardware device twice.
 
 
-q. How can I remove tracks from a playlist?
-a. Hitting 'Delete' will remove all selected tracks. No questions asked. The right mouse-button will bring up a menu that also includes 'delete'.
+q. How can I remove library from a playlist?
+a. Hitting 'Delete' will remove all selected library. No questions asked. The right mouse-button will bring up a menu that also includes 'delete'.
 
 
 q. Can I make a feauture request?

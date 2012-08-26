@@ -1,7 +1,7 @@
 /*
  *  gm_songlist.h
  *  GUIMUP struct for song data
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *

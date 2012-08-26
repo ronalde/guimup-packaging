@@ -1,21 +1,4 @@
-/*  GdkPixbuf RGBA C-Source image dump
- *
- *  This file is part of Guimup
- *  (c) 2008 Johan Spee
- * 
- *  GUIMUP is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  GUIMUP is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see http://www.gnu.org/licenses/.
- */
+/* GdkPixbuf RGBA C-Source image dump */
 
 #ifdef __SUNPRO_C
 #pragma align 4 (mn_info_b)
@@ -39,17 +22,18 @@ static const guint8 mn_info_b[] =
   /* height (10) */
   "\0\0\0\12"
   /* pixel_data: */
-  "%Lg\1""4Yt\13""2XrB4Yt\220+Rm\260+Rm\2604Yt\2202XrB4Yt\13%Lg\1""4Yt\13"
-  "3Xrd,Rm\254&Mh\263\271\310\322\376\271\310\322\376&Mh\263,Rm\2543Xrd"
-  "4Yt\13""2XrB,Rm\254&Mh\263&Mh\263\351\357\364\370\351\357\364\370&Mh"
-  "\263&Mh\263,Rm\2542XrB1Xr\217&Mh\263&Mh\263&Mh\263o\212\234\310o\212"
-  "\234\310&Mh\263&Mh\263&Mh\2634Yt\220+Rl\257&Mh\263&Mh\263&Mh\263\304"
-  "\320\327\350\304\320\327\350&Mh\263&Mh\263&Mh\263+Rm\260+Rm\260&Mh\263"
-  "&Mh\263&Mh\263\352\360\364\370\352\360\364\370&Mh\263&Mh\263&Mh\263+"
-  "Rm\2604Yt\220&Mh\263&Mh\263&Mh\263\352\360\364\370\351\357\364\370&M"
-  "h\263&Mh\263&Mh\2634Yt\2202XrC,Rm\254&Mh\263&Mh\263\350\356\363\370\347"
-  "\356\362\370&Mh\263&Mh\263,Rm\2542XrC5Zt\13""3Xsd,Rm\254&Mh\263\270\307"
-  "\321\343\267\306\321\343&Mh\263,Rm\2543Xsd5Zt\13(Oj\1""5Zt\13""2XrC4"
-  "Yt\221+Rm\261+Rm\2604Zt\2212XrC5Zt\13(Oj\1"};
+  "\36Mn\0-[{\4*YzM-[{\275#Su\347#Su\347-[{\317*YzU-[{\10\36Mn\0-[{\0,Z"
+  "z\241%Tu\344\36Np\350\267\311\325\377\267\311\325\377\36Np\350%Tu\322"
+  ",Zz\237-[{\0*YzM%Tu\344\36Np\350\36Np\350\351\360\365\377\351\360\365"
+  "\377\36Np\350\36Np\350%Tu\344*YzU*Yz\316\36Np\350\36Np\350\36Np\350L"
+  "r\215\370Lr\215\370\36Np\350\36Np\350\36Np\350-[{\277$St\346\36Np\350"
+  "\36Np\350\36Np\350\303\321\331\375\303\321\331\375\36Np\350\36Np\350"
+  "\36Np\350#Su\347#Su\347\36Np\350\36Np\350\36Np\350\351\360\365\377\351"
+  "\360\365\377\36Np\350\36Np\350\36Np\350#Su\347-[{\317\36Np\350\36Np\350"
+  "\36Np\350\351\360\365\377\351\360\365\377\36Np\350\36Np\350\36Np\350"
+  "-[{\317*YzU%Tu\344\36Np\350\36Np\350\350\357\364\377\347\357\363\377"
+  "\36Np\350\36Np\350%Tu\344*YzF.\\|\6,Zz\241%Tu\344\36Np\350\266\310\324"
+  "\374\264\307\324\374\36Np\350%Tu\332,Zz\241.\\|\4!Pq\1.\\|\4*YzN-[{\320"
+  "#Su\347#Su\347-[{\320*YzJ.\\|\0!Pq\0"};
 
 

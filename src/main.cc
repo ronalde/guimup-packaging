@@ -1,7 +1,7 @@
 /*
  *  main.cc
  *  GUIMUP main source file
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *

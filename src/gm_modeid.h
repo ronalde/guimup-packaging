@@ -1,7 +1,7 @@
 /*
  *  gm_modeid.h
- *  GUIMUP tracks mode IDs
- *  (c) 2008 Johan Spee
+ *  GUIMUP combo mode IDs
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -23,10 +23,7 @@
 #define GM_MODEID_H
 
 enum
-{/* used for:
-    combo item ID
-    dataModeID
-    searchModeID */
+{/* used for: dataModeID, searchModeID, selectModeID */
     ID_artist,
     ID_album,
     ID_genre,
@@ -34,6 +31,7 @@ enum
     ID_folder,
     ID_search,
     ID_plist,
+	ID_all
 };
 
 #endif // GM_MODEID_H

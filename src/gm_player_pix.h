@@ -1,7 +1,7 @@
 /*
  *  gm_player_pix.h
  *  GUIMUP inline image resources for the player
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -30,9 +30,6 @@
 #include "grafix/mn_icon16.h"
 #include "grafix/mn_icon24.h"
 #include "grafix/mn_icon32.h"
-#include "grafix/mn_icon48.h"
-#include "grafix/mn_info_a.h"
-#include "grafix/mn_info_b.h"
 #include "grafix/mn_next.h"
 #include "grafix/mn_pause.h"
 #include "grafix/mn_play.h"
@@ -42,8 +39,6 @@
 #include "grafix/mn_stop.h"
 #include "grafix/nopic.h"
 #include "grafix/onair.h"
-#include "grafix/tb_random.h"
-#include "grafix/tb_repeat.h"
 #include "grafix/st_exit.h"
 #include "grafix/st_next.h"
 #include "grafix/st_noconn.h"
@@ -54,5 +49,8 @@
 #include "grafix/st_prev.h"
 #include "grafix/st_stop.h"
 #include "grafix/st_stopped.h"
-
+#include "grafix/tag_edit.h"
+#include "grafix/art_view.h"
+#include "grafix/tr_update.h"
+#include "grafix/tr_folder.h"
 #endif // GM_PLAYER_PIX_H

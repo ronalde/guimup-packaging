@@ -1,7 +1,7 @@
 /*
  *  gm_player.h
  *  GUIMUP main player window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -29,17 +29,15 @@
 #include <gtkmm/button.h>
 #include <gtkmm/progressbar.h>
 #include <gtkmm/image.h>
-#include <gtkmm/scale.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/label.h>
 #include <gtkmm/frame.h>
 #include <gtkmm/eventbox.h>
-#include <gtkmm/statusicon.h>
 #include <gtkmm/uimanager.h>
 #include <gtkmm/stock.h>
 #include <gtkmm/iconfactory.h>
 #include <gtkmm/tooltip.h>
-#include <gdkmm/general.h> // for screen_width()
+#include <gtkmm/toggleaction.h>
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
@@ -51,12 +49,14 @@
 #include <sstream>
 #include <errno.h>
 #include <dirent.h>
+#include "gm_slider.h"
 #include "gm_scroller.h"
 #include "gm_config.h"
-#include "gm_taginfo.h"
 #include "gm_mpdcom.h"
-#include "gm_tracks.h"
+#include "gm_library.h"
 #include "gm_settings.h"
+#include "gm_trayicon.h"
+
 
 enum // ID # for widgets
 {
@@ -67,9 +67,6 @@ enum // ID # for widgets
     ID_plst, // playlist button
     ID_mmax, // mini/maxi mode button
     ID_sets, // settings button
-    ID_rept, // repeat toggle button
-    ID_rand, // random toggle button
-    ID_info, // song info button
     ID_volm, // volume slider
 };
 
@@ -80,57 +77,61 @@ public:
   gm_Player();
   virtual ~gm_Player();
 
-protected:
+private:
 //  tray icon functions & vars
     void tIcon_create();
-    void tIcon_blink();
     void tIcon_on_popup (guint button, guint32 time);
     void tIcon_toggle_hide();
     bool on_delete_event(GdkEventAny*);
-    Glib::RefPtr<Gtk::StatusIcon> trayIcon;
+	void on_set_playertoggle();
+	void on_set_libtoggle();
+	void on_library_hide();
+
+    Glib::RefPtr<gm_trayIcon> trayIcon;
     Glib::RefPtr<Gtk::UIManager> tIcon_UIManager;
     Glib::RefPtr<Gtk::ActionGroup> tIcon_ActionGroup;
-    std::pair<int, int> win_pos;
+    Glib::RefPtr<Gtk::ToggleAction> ToggleLibrary;
+    Glib::RefPtr<Gtk::ToggleAction> TogglePlayer;
 
-private:
 //  widgets
+	Gtk::EventBox eb_all;				// for context menu popup
     Gtk::Fixed fx_main;
-        Gtk::EventBox eb_background;
+        Gtk::EventBox eb_background;	// for bg color only
         Gtk::Frame fr_lcdisplay;
         Gtk::VBox vb_lcdisplay;
+			Gtk::EventBox eb_scroller;  // for mouse-over effect
             gm_Scroller titleScroller;
             Gtk::HBox hb_trackdata;
                 Gtk::Label lb_type, lb_kbps, lb_khz, lb_time, lb_totaltime;
-                Gtk::EventBox eb_time;
+                Gtk::EventBox eb_time;  // for time +/- toggle
         Gtk::ProgressBar pb_timeprogress;
         Gtk::HBox hb_center;
             Gtk::Image img_aArt;
             Gtk::VBox vb_center_right;
                 Gtk::Label lb_album;
                 Gtk::Label lb_year;
-                Gtk::HBox hb_tbuttons;
-                    Gtk::Button bt_info;
-                    Gtk::ToggleButton  tbt_repeat;
-                    Gtk::ToggleButton  tbt_random;
-                Gtk::HScale hsc_volume;
+				Gtk::Label lb_comment;
+                gm_slider hsc_volume;
         Gtk::HBox hb_buttonrow;
             Gtk::Image img_statusled;
             Gtk::Button bt_prev, bt_stop, bt_play, bt_next, bt_plst, bt_sizr, bt_conf;
 
 //  variables
     gm_mpdCom mpdCom;
-    gm_tagInfo tagInfo;
-    gm_Tracks tracksWindow;
     gm_Config config;
+    gm_library libraryWindow;
     gm_settings settingsWindow;
+
     sigc::connection minmaxtimer;
+
     ustring
         mpd_music_path,
 		mpd_plist_path,
         current_art_path,
-        custom_art_file,
 		serverName,
-		serverPassword;
+		serverPassword,
+		file_to_update,
+		fullpath;
     int
         current_status,
         current_volume,
@@ -149,16 +150,20 @@ private:
     double songTotalTime;
 
     bool
-        b_winIsMax,
         b_repeat,
         b_random,
-        b_trayicon,
+		b_single,
+		b_consume,
         b_minmax_xfade,
         b_minmax_busy,
         b_mpdSetsVolume,
-        b_timeremain,
         b_stream,
-		b_connected;
+		b_connected,
+		b_playerWindow_hidden,
+		b_settingsWindow_hidden,
+		b_libraryWindow_hidden,
+		b_nosong,
+		b_useTrayIcon;
 
     Glib::RefPtr<Gdk::Pixbuf>
         pxb_albmart,
@@ -183,17 +188,18 @@ private:
         img_mn_prev,
         img_mn_sizer,
         img_mn_stop,
-        img_mn_info_a,
-        img_mn_info_b,
-        img_tb_random,
-        img_tb_repeat;
+		img_men_art,
+		img_men_edit,
+		img_men_update,
+		img_men_browse;
 
+    Gtk::Menu rClickMenu;
+        
 //  functions
     void init_widgets();
     void init_signals();
     void init_vars();
-    void set_childwindows();
-    void set_albumart(ustring path, bool stream = false);
+    void set_albumart(ustring path);
     bool go_find_art(ustring &, const char*);
     void set_status(int, ustring mesg = "");
     void on_hide();
@@ -201,12 +207,18 @@ private:
     void on_newSong(songInfo);
     void on_newStatus(statInfo);
     bool on_timeClicked(GdkEventButton*);
+    bool on_playerRClicked(GdkEventButton*);
     void on_connectsignal(bool connected);
     bool on_progressClicked(GdkEventButton*);
     void on_connectrequest(ustring, int, ustring, bool);
     void on_settingssaved();
+    void on_updatefile(ustring file);
     void on_signal(int);
 	void on_signal_host_port_pwd(ustring, int, ustring);
+	void on_menu_Art();
+	void on_menu_Edit();
+	void on_menu_Reload();
+	void on_menu_Browse();
     void set_fonts();
 	void get_mpd_paths();
     bool maxiMice();
@@ -214,6 +226,11 @@ private:
     ustring escapeString(ustring str);
     std::string into_string(int);
     ustring into_time(int);
+	bool on_enter_scroller(GdkEventCrossing*);
+	bool on_leave_scroller(GdkEventCrossing*);
+	bool on_trayClicked(GdkEventButton*);
+ 	bool on_tray_or_vol_Scrolled(GdkEventScroll*);
+
 };
 
 #endif //  GM_PLAYER_H

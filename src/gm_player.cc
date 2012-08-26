@@ -1,7 +1,7 @@
 /*
  *  gm_player.cc
  *  GUIMUP main player window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -24,40 +24,127 @@
 
 gm_Player::gm_Player()
 {
-	config.load_config();
 	init_widgets();
-	init_signals();
     init_vars();
+	init_signals();
+	
+	libraryWindow.set_config(&config);
+	libraryWindow.set_trSettings();
+	
+	// right-click popup menu
+	Glib::RefPtr<Gdk::Pixbuf> pxbuf;	
+	pxbuf = Gdk::Pixbuf::create_from_inline(-1, tr_folder, false);
+	img_men_browse.set(pxbuf);
+	pxbuf = Gdk::Pixbuf::create_from_inline(-1, tr_update, false);
+	img_men_update.set(pxbuf);
+	pxbuf = Gdk::Pixbuf::create_from_inline(-1, tag_edit, false);
+	img_men_edit.set(pxbuf);
+	pxbuf = Gdk::Pixbuf::create_from_inline(-1, art_view, false);
+	img_men_art.set(pxbuf);
+
+	{ Gtk::Menu::MenuList& menulist = rClickMenu.items();
+	menulist.push_back( Gtk::Menu_Helpers::ImageMenuElem(" View albumart", img_men_art,
+	  	sigc::mem_fun(*this, &gm_Player::on_menu_Art) ) );
+	menulist.push_back( Gtk::Menu_Helpers::ImageMenuElem(" Edit tags", img_men_edit,
+	  	sigc::mem_fun(*this, &gm_Player::on_menu_Edit) ) );
+	menulist.push_back( Gtk::Menu_Helpers::ImageMenuElem(" Reload tags", img_men_update,
+	  	sigc::mem_fun(*this, &gm_Player::on_menu_Reload) ) );
+	menulist.push_back( Gtk::Menu_Helpers::ImageMenuElem(" Open folder", img_men_browse,
+		sigc::mem_fun(*this, &gm_Player::on_menu_Browse) ) );
+	} rClickMenu.accelerate(*this);
+	// disable until we have a song
+	Gtk::Menu::MenuList& menulist = rClickMenu.items();
+	for (int i = 0; i < 4; i++)
+	    menulist[i].set_sensitive(false);
+	// End right-click popup menu
+	
 	settingsWindow.set_config(&config);
+		
 	// connect and set status
 	set_status(-10, " ");
-	if (config.get_bool("AutoConnect"))
+	if (config.AutoConnect)
 	{
 		cout << "Autoconnecting, as configured" << endl;
-		on_connectrequest(config.get_string("MPD_Host"),
-						  config.get_int("MPD_Port"),
-						  config.get_string("MPD_Password"),
-						  config.get_bool("OverrideMPDconf"));
+		on_connectrequest(config.MPD_Host, config.MPD_Port, config.MPD_Password, config.OverrideMPDconf);
 		// if connection fails MPD is probably not running
-		if (!b_connected &&  config.get_bool("StartMPD_onStart"))
+		if (!b_connected &&  config.StartMPD_onStart)
 		{
 			cout << "Starting MPD, as configured" << endl;
-			system ( (config.get_string("MPD_onStart_command")).data() );
-			on_connectrequest(config.get_string("MPD_Host"),
-						  config.get_int("MPD_Port"),
-						  config.get_string("MPD_Password"),
-						  config.get_bool("OverrideMPDconf"));
+			system ( (config.MPD_onStart_command).data() );
+			on_connectrequest(config.MPD_Host, config.MPD_Port,
+						  config.MPD_Password, config.OverrideMPDconf);
 		}
 	}
 	
 	if (!b_connected)
 	{
 		on_connectsignal(false);
-		set_albumart("", false);
+		set_albumart("nopic");
 		set_status(-1, "Not connected");
 	}
 	
-	set_childwindows();
+	//	if (!config.toggle_Player && b_useTrayIcon): can't hide the player in its own constructor!
+
+	if (config.toggle_Library &&  b_useTrayIcon)
+	{
+		libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+		libraryWindow.present();
+		b_libraryWindow_hidden = false;
+	}	
+}
+
+void gm_Player::on_menu_Art()
+{
+	if (b_nosong || current_art_path == "nopic" || b_stream)
+		return;
+	
+	// strip off the filename, keep dir only
+	ustring path = fullpath.substr(0, fullpath.rfind("/"));
+	
+	std::vector<std::string> argv;
+	argv.push_back(config.Art_Viewer);
+	argv.push_back(path);
+	Glib::spawn_async_with_pipes(std::string("/usr/bin"),argv,Glib::SpawnFlags(0));
+}
+
+void gm_Player::on_menu_Edit()
+{
+	if (b_nosong || b_stream || fullpath.empty())
+		return;
+
+	// strip off the filename, keep dir only
+	ustring path = fullpath.substr(0, fullpath.rfind("/"));
+	
+	std::vector<std::string> argv;
+	argv.push_back((config.Tag_Editor).c_str());
+	argv.push_back(path);
+	Glib::spawn_async_with_pipes(std::string("/usr/bin"),argv,Glib::SpawnFlags(0));
+}
+
+void gm_Player::on_menu_Reload()
+{
+	if (b_nosong || b_stream || fullpath.empty())
+		return;
+	
+	// strip off the filename, keep dir only
+	ustring path = fullpath.substr(0, fullpath.rfind("/"));
+	// mpd's music path must also be removed
+	ustring to_update = path.substr(mpd_music_path.length(), path.length());
+	mpdCom.updatefile(to_update);
+}
+
+void gm_Player::on_menu_Browse()
+{
+	if (b_nosong || b_stream || fullpath.empty())
+		return;
+	
+	// strip off the filename, keep dir only
+	ustring path = fullpath.substr(0, fullpath.rfind("/"));
+	
+	std::vector<std::string> argv;
+	argv.push_back("xdg-open");
+	argv.push_back(path);
+	Glib::spawn_async_with_pipes(std::string("/usr/bin"),argv,Glib::SpawnFlags(0));
 }
 
 // from constructor or settingswindow
@@ -67,7 +154,7 @@ void gm_Player::on_connectrequest(ustring host, int port, ustring pswd, bool use
 	{
 		on_connectsignal(false);
 		set_status(-1, "Connection failed");
-		set_albumart("", false);
+		set_albumart("nopic");
 	}
 	else
 		on_connectsignal(true);
@@ -79,13 +166,13 @@ void gm_Player::on_connectsignal(bool isconnected)
 	if (isconnected)
 	{
 		b_connected = true;
-		tracksWindow.connect_server(serverName, serverPort, serverPassword);
+		libraryWindow.connect_server(serverName, serverPort, serverPassword);
 		settingsWindow.set_mpdcom( &mpdCom );
 	}
 	else
 	{
 		b_connected = false;
-		tracksWindow.disconnect_server();
+		libraryWindow.disconnect_server();
 		settingsWindow.set_mpdcom( NULL );
 	}
 }
@@ -97,16 +184,24 @@ void gm_Player::init_vars()
 	current_status = MPD_STATUS_STATE_UNKNOWN;
 	current_volume = 0;
 	songTotalTime = 0;
+	b_repeat = false;
+	b_random = false;
+	b_single = false;
+	b_consume = false;
 	b_connected = false;
 	b_mpdSetsVolume = false;
 	b_stream = false;
 	b_minmax_busy = false;
+	b_playerWindow_hidden = false;	
+	b_settingsWindow_hidden = false;
+	b_useTrayIcon = config.use_TrayIcon;
+	on_library_hide();
+	b_nosong = false;
     bt_play.grab_focus();
 	get_mpd_paths();
-		current_art_path = "";
-	custom_art_file = config.get_string("AlbumArt_File");
-	b_timeremain = config.get_bool("use_TimeRemaining");
-	int delay = config.get_int("Scroller_Delay");
+	current_art_path = "";
+	file_to_update = "/";
+	int delay = config.Scroller_Delay;
 	if (delay < 20)
 		delay = 20;
 	titleScroller.set_delay( delay );
@@ -115,48 +210,44 @@ void gm_Player::init_vars()
 
 void gm_Player::get_mpd_paths()
 {
-	mpd_music_path = config.get_string("MPD_MusicPath");
+	mpd_music_path = config.MPD_MusicPath;
 	if (mpd_music_path.empty())
-	{
 		mpd_music_path = mpdCom.get_musicPath();
-		if (!mpd_music_path.empty() && mpd_music_path.rfind("/") != mpd_music_path.length()-1)
-			mpd_music_path += "/";
-		config.set_string("MPD_MusicPath", mpd_music_path);
-	}
 	
-	mpd_plist_path = config.get_string("MPD_PlaylistPath");
-	if (mpd_plist_path.empty())
+	if (!mpd_music_path.empty() && mpd_music_path.rfind("/") != mpd_music_path.length()-1)
 	{
-		mpd_plist_path = mpdCom.get_playlistPath();
-		if (!mpd_plist_path.empty() && mpd_plist_path.rfind("/") != mpd_plist_path.length()-1)
-			mpd_plist_path += "/";
-		config.set_string("MPD_PlaylistPath", mpd_plist_path);
+			mpd_music_path += "/";
+		config.MPD_MusicPath = mpd_music_path;
 	}
 	
-	tracksWindow.set_plistPath(mpd_plist_path);	
+	mpd_plist_path = config.MPD_PlaylistPath;
+	if (mpd_plist_path.empty())
+		mpd_plist_path = mpdCom.get_playlistPath();
+	if (!mpd_plist_path.empty() && mpd_plist_path.rfind("/") != mpd_plist_path.length()-1)
+	{
+			mpd_plist_path += "/";
+		config.MPD_PlaylistPath = mpd_plist_path;
+	}
+	
+	libraryWindow.set_plistPath(mpd_plist_path);	
 }
 
 void gm_Player::set_fonts()
 {
-	ustring font = config.get_string("Font_Family") + " bold " +
-						   	config.get_string("Scroller_Fontsize");
+	ustring font = config.Font_Family + " bold " + into_string(config.Scroller_Fontsize);
 	titleScroller.set_font(font);
-	font = config.get_string("Font_Family") + " " +
-						   	config.get_string("TrackInfo_Fontsize");
+	font = config.Font_Family + " " + into_string(config.TrackInfo_Fontsize);
 	lb_type.modify_font((Pango::FontDescription)font.data());
 	lb_khz.modify_font((Pango::FontDescription)font.data());
 	lb_kbps.modify_font((Pango::FontDescription)font.data());
-	font = config.get_string("Font_Family") + " " +
-						   	config.get_string("Time_Fontsize");
+	font = config.Font_Family + " " + into_string(config.Time_Fontsize);
 	lb_time.modify_font((Pango::FontDescription)font.data());
 	lb_totaltime.modify_font((Pango::FontDescription)font.data());
-	font = config.get_string("Font_Family") + " " +
-						   	config.get_string("Album_Fontsize");
+	font = config.Font_Family + " " + into_string(config.Album_Fontsize);
 	lb_album.modify_font((Pango::FontDescription)font.data());
 	lb_year.modify_font((Pango::FontDescription)font.data());
-	font = config.get_string("Font_Family") + " " +
-						   	config.get_string("Tracks_Fontsize");
-	tracksWindow.set_listfont(font);
+	font = config.Font_Family + " " + into_string(config.library_Fontsize);
+	libraryWindow.set_listfont(font);
 }
 
 
@@ -181,17 +272,16 @@ void gm_Player::set_status(int status, ustring message)
 			lb_kbps.set_text("");
 			lb_album.set_text("");
 			lb_year.set_text("");
-			tagInfo.reset();
-			set_albumart("",false);
+			lb_comment.set_text("");
+			set_albumart("nopic");
 			// titleScroller.pause(true);
 			pb_timeprogress.set_fraction(0);
 
-            if (b_trayicon)
+            if (b_useTrayIcon)
             {
             	tIcon_ActionGroup->get_action("Pause")->set_visible(false);
             	tIcon_ActionGroup->get_action("Play")->set_visible(true);
             	trayIcon->set(pxb_st_noconn);
-				tIcon_blink();
                 trayIcon->set_tooltip(" Not Connected ");
             }
             break;
@@ -206,7 +296,7 @@ void gm_Player::set_status(int status, ustring message)
 			lb_khz.set_text("");
 			pb_timeprogress.set_fraction(0);
 
-			if (b_trayicon)
+			if (b_useTrayIcon)
 			{
 				tIcon_ActionGroup->get_action("Pause")->set_visible(false);
             	tIcon_ActionGroup->get_action("Play")->set_visible(true);
@@ -220,7 +310,7 @@ void gm_Player::set_status(int status, ustring message)
             bt_play.set_image(img_mn_pause);
             img_statusled.set(pxb_led_playing);
 			// titleScroller.pause(false);
-			if (b_trayicon)
+			if (b_useTrayIcon)
 			{
 				tIcon_ActionGroup->get_action("Pause")->set_visible(true);
             	tIcon_ActionGroup->get_action("Play")->set_visible(false);
@@ -233,7 +323,7 @@ void gm_Player::set_status(int status, ustring message)
         {
             bt_play.set_image(img_mn_play);
             img_statusled.set(pxb_led_paused);
-			if (b_trayicon)
+			if (b_useTrayIcon)
 			{
 				tIcon_ActionGroup->get_action("Pause")->set_visible(false);
 				tIcon_ActionGroup->get_action("Play")->set_visible(true);
@@ -255,11 +345,11 @@ void gm_Player::set_status(int status, ustring message)
 			lb_kbps.set_text("");
 			lb_album.set_text("");
 			lb_year.set_text("");
-			tagInfo.reset();
-			set_albumart("",false);
+			lb_comment.set_text("");
+			set_albumart("nopic");
 			pb_timeprogress.set_fraction(0);
 
-			if (b_trayicon)
+			if (b_useTrayIcon)
 			{
 				tIcon_ActionGroup->get_action("Pause")->set_visible(false);
 				tIcon_ActionGroup->get_action("Play")->set_visible(true);
@@ -273,10 +363,12 @@ void gm_Player::set_status(int status, ustring message)
 }
 
 
-void gm_Player::set_albumart(ustring sub_path, bool stream)
+void gm_Player::set_albumart(ustring sub_path)
 {
-	
-	if (sub_path.empty())
+	bool b_skip_load = false;
+	bool b_file_ok = false;
+
+	if (sub_path.empty() || sub_path == "nopic")
 	{
 		if (current_art_path == "nopic")
 			return;
@@ -284,10 +376,12 @@ void gm_Player::set_albumart(ustring sub_path, bool stream)
 		pxb_xfading = pxb_albmart->copy();
 		img_aArt.set(pxb_albmart);
 		current_art_path = "nopic";
-		return;
+		b_file_ok = true;
+		b_skip_load = true;
 	}
 	
-	if (stream)
+	// stream
+	if ((sub_path.substr(0,5)).lowercase() == "http:")
 	{
 		if (current_art_path == "onair")
 			return;
@@ -295,64 +389,86 @@ void gm_Player::set_albumart(ustring sub_path, bool stream)
 		pxb_xfading = pxb_albmart->copy();
 		img_aArt.set(pxb_albmart);
 		current_art_path = "onair";
-		return;
+		b_file_ok = true;
+		b_skip_load = true;
 	}
-	
+
 	// [1] find a suitable image
 	ustring artPath = mpd_music_path + sub_path;
-	bool b_file_ok = false;
-	if (!custom_art_file.empty())
-		b_file_ok = go_find_art(artPath, custom_art_file.data());
-	if (!b_file_ok)
-		b_file_ok = go_find_art(artPath, "folder");
-	if (!b_file_ok)
-		b_file_ok = go_find_art(artPath, "album");
-	if (!b_file_ok)
-		b_file_ok = go_find_art(artPath, "cover");
-	if (!b_file_ok)
-		b_file_ok = go_find_art(artPath, "front");
-	//if (!b_file_ok) // anything else?
-		//b_file_ok = go_find_art(artPath, ".");
+	
+	if (!b_skip_load)
+	{	
+		if (!(config.AlbumArt_File).empty())
+			b_file_ok = go_find_art(artPath, (config.AlbumArt_File).data());
+		if (!b_file_ok)
+			b_file_ok = go_find_art(artPath, "folder");
+		if (!b_file_ok)
+			b_file_ok = go_find_art(artPath, "album");
+		if (!b_file_ok)
+			b_file_ok = go_find_art(artPath, "cover");
+		if (!b_file_ok)
+			b_file_ok = go_find_art(artPath, "front");
+		if (!b_file_ok) // anything else?
+			b_file_ok = go_find_art(artPath, ".");
 		
-	if (current_art_path == artPath)
-		return; // nothing to do
-	else
-		current_art_path = artPath;
+		if (current_art_path == artPath)
+			return; // nothing to do
+		else
+			current_art_path = artPath;
 
-	// [2] put it in a pixbuf	
-	if (b_file_ok)
-	{
-		try
+		// [2] put it in a pixbuf	
+		if (b_file_ok)
 		{
-			pxb_albmart = Gdk::Pixbuf::create_from_file(artPath, 200, 200, true);
-		}
-		catch(Glib::FileError)
-		{
-			b_file_ok = false;
-			cout << "Album art: error reading file" << endl;
-		}
-		catch(Gdk::PixbufError)
-		{
-			b_file_ok = false;
-			cout << "Album art: error creating pixbuf" << endl;
+
+			try
+			{
+				pxb_albmart = Gdk::Pixbuf::create_from_file(artPath, 200, 200, true);
+			}
+			catch(Glib::FileError)
+			{
+				b_file_ok = false;
+				cout << "Album art: error reading file" << endl;
+			}
+			catch(Gdk::PixbufError)
+			{
+				b_file_ok = false;
+				cout << "Album art: error creating pixbuf" << endl;
+			}
 		}
 	}
 
-    if (b_file_ok)
+	if (!b_file_ok)
 	{
-		// [3] draw a 1 px border on the image
-		if(!pxb_albmart->get_has_alpha())
-			pxb_albmart = pxb_albmart->add_alpha(false,0,0,0);
+		if (current_art_path == "nopic")
+			return; // nothing to do
+		else
+		{
+			current_art_path = "nopic";
+			pxb_albmart = Gdk::Pixbuf::create_from_inline(-1, nopic, false);
+			pxb_xfading = pxb_albmart->copy();
+			b_skip_load = true;
+		}
+	}
+
+    if (!b_skip_load)
+	{
+		// [3] add alpha channel (segfault if we don't - even if the image has alpa)
+		pxb_albmart = pxb_albmart->add_alpha(false,0,0,0);
+		
 		int imgH = pxb_albmart->get_height();
 		int imgW = pxb_albmart->get_width();
-		int rows = pxb_albmart->get_rowstride();
-		guint8 *ptr_pixel;
-		guint8 *ptr_firstpixel = pxb_albmart->get_pixels();
+		int row = pxb_albmart->get_rowstride();
 
-		for (int  h = 0; h < imgH; h++)
+		// [4] draw a 1 px border on the image
+		guint8 *ptr_pixel;
+		guint8 *ptr_firstpixel =  pxb_albmart->get_pixels();
+        aArt_H = 	pxb_albmart->get_height();
+        aArt_W = 	pxb_albmart->get_width();
+        aArt_row = 	pxb_albmart->get_rowstride();
+		for (int h = 0; h < aArt_H; h++)
 		{
-			ptr_pixel = ptr_firstpixel + (h * rows);
-			for (int  w = 0; w < imgW; w++)
+			ptr_pixel = ptr_firstpixel + h * aArt_row;
+			for (int w = 0; w < aArt_W; w++)
 			{
 				if (h == 0 || h == imgH-1 || w == 0 || w == imgW-1)
 				{
@@ -364,35 +480,29 @@ void gm_Player::set_albumart(ustring sub_path, bool stream)
 				ptr_pixel += 4;
 			}
 		}
+
 		pxb_xfading = pxb_albmart->copy();
 	}
-	else // b_file_ok == false
-	{
-		if (current_art_path != "nopic")
-		{
-    		pxb_albmart = Gdk::Pixbuf::create_from_inline(-1, nopic, false);
-			pxb_xfading = pxb_albmart->copy();
-			current_art_path = "nopic";
-		}
-	}
+
 
 	// [5] show pxb_albmart
-	if (b_winIsMax)
+	if (config.PlayerWindow_Max)
 		img_aArt.set(pxb_albmart);
 	else
 	{
 		// set alpha = 0 for pxb_xfading
-		ptr_xfad =  pxb_xfading->get_pixels();
+		guint8 *ptr_pixel;
+		guint8 *ptr_firstpixel = pxb_xfading->get_pixels();
         aArt_H = 	pxb_xfading->get_height();
         aArt_W = 	pxb_xfading->get_width();
         aArt_row = 	pxb_xfading->get_rowstride();
 		for (int h = 0; h < aArt_H; h++)
 		{
-			ptr_xfadpix = ptr_xfad + h * aArt_row;
+			ptr_pixel = ptr_firstpixel + h * aArt_row;
 			for (int w = 0; w < aArt_W; w++)
 			{
-				ptr_xfadpix[3] = 0;
-				ptr_xfadpix += 4; // R,G,B,a
+				ptr_pixel[3] = 0;
+				ptr_pixel += 4; // R,G,B,a
 			}
 		}
 		// show pxb_xfading
@@ -446,10 +556,7 @@ bool gm_Player::go_find_art(ustring & artPath, const char* findthis)
 
 void gm_Player::init_widgets()
 {
-	bool usetips = config.get_bool("show_ToolTips");
-	
-	b_winIsMax = config.get_bool("PlayerWindow_Max");
-	if (b_winIsMax)
+	if (config.PlayerWindow_Max)
 	{
 		windowH = 310;
 		btrowPos = 276;
@@ -460,9 +567,9 @@ void gm_Player::init_widgets()
 		btrowPos = 70;
 	}
 
-	int posx = config.get_int("PlayerWindow_Xpos");
+	int posx = config.PlayerWindow_Xpos;
 	if (posx < 0) posx = 0;
-	int posy = config.get_int("PlayerWindow_Ypos");
+	int posy = config.PlayerWindow_Ypos;
 	if (posy < 0) posy = 0;
 	move(posx, posy);
 	
@@ -472,144 +579,126 @@ void gm_Player::init_widgets()
     set_resizable(false);
     set_border_width(4);
 
-	Glib::RefPtr<Gdk::Pixbuf> pxb_pointer;
+	Glib::RefPtr<Gdk::Pixbuf> pxb;
 	
     std::list< Glib::RefPtr<Gdk::Pixbuf> > window_icons;
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_icon16, false);
-    window_icons.push_back(pxb_pointer);
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_icon24, false);
-    window_icons.push_back(pxb_pointer);
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
-    window_icons.push_back(pxb_pointer);
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_icon48, false);
-    window_icons.push_back(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon16, false);
+    window_icons.push_back(pxb);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon24, false);
+    window_icons.push_back(pxb);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
+    window_icons.push_back(pxb);
     set_icon_list(window_icons);
 
 	// widget properties
-	eb_background.set_size_request(332,50);
-    // eb_background is only used for its background color
+	eb_background.set_size_request(332,50);  // only used for its background color
 	eb_background.modify_bg(Gtk::STATE_NORMAL, Gdk::Color("#D3E4F0"));
 	vb_lcdisplay.set_size_request(332,50);
-    fr_lcdisplay.set_shadow_type(Gtk::SHADOW_IN);
+	fr_lcdisplay.set_shadow_type(Gtk::SHADOW_IN);
+	eb_scroller.modify_bg(Gtk::STATE_NORMAL, Gdk::Color("#D3E4F0"));
+	eb_scroller.set_events(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK);
+	eb_scroller.set_size_request(328,26);
 	titleScroller.set_bg("#D3E4F0");
-	titleScroller.set_fg("#1E3C59");
-	titleScroller.set_size_request(328,24); // eb_background minus frame-border
+	titleScroller.set_fg("#1E3C69");
+	titleScroller.set_size_request(328,26); // eb_background minus frame-border
+	titleScroller.set_double_buffered(true);
 	eb_time.modify_bg(Gtk::STATE_NORMAL, Gdk::Color("#D3E4F0"));
 	eb_time.set_events(Gdk::BUTTON_PRESS_MASK);
     hb_trackdata.set_homogeneous(false);
-    lb_type.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+    lb_type.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     lb_type.set_alignment(0, 0.5);
     lb_type.set_size_request(40,-1);
 	lb_type.set_use_markup(true);
-    lb_kbps.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+    lb_kbps.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     lb_kbps.set_alignment(1, 0.5); 
 	lb_kbps.set_use_markup(true);
 	lb_kbps.set_size_request(64,-1);
-    lb_khz.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+    lb_khz.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     lb_khz.set_alignment(0, 0.5);
 	lb_khz.set_use_markup(true);
-    lb_time.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+    lb_time.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     lb_time.set_alignment(1, 0.5);
     lb_time.set_use_markup(true);
-	if (usetips)
+	if (config.show_ToolTips)
 		lb_time.set_tooltip_text("Click to toggle +/-");
-    lb_totaltime.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+    lb_totaltime.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     lb_totaltime.set_alignment(0, 0.5);
     lb_totaltime.set_use_markup(true);	
     pb_timeprogress.modify_bg(Gtk::STATE_NORMAL, Gdk::Color("#FFFFFF"));
-	pb_timeprogress.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
+	pb_timeprogress.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C69"));
     pb_timeprogress.set_size_request(332,8);
 	pb_timeprogress.set_events(Gdk::BUTTON_PRESS_MASK);
     hb_center.set_size_request(332,200);
     hb_center.set_spacing(12);
+	img_aArt.set_tooltip_text("Right-click for menu");
     img_aArt.set_size_request(200,200);
 	img_aArt.set_alignment(0.5, 0.5);
+	img_aArt.set_double_buffered(true);
     vb_center_right.set_homogeneous(false);
     vb_center_right.set_spacing(4);
-    lb_album.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
     lb_album.set_size_request(120,-1); // makes lines wrap
     lb_album.set_alignment(0, 0);
     lb_album.set_use_markup(true);
     lb_album.set_single_line_mode(false);
     lb_album.set_line_wrap(true);
-    lb_year.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
     lb_year.set_alignment(0, 0);
     lb_year.set_use_markup(true);
-	hb_tbuttons.set_homogeneous(false);
-	hb_tbuttons.set_spacing(5);
-	hb_tbuttons.set_size_request(-1, 22);
+	lb_comment.set_use_markup(true);
+	lb_comment.set_alignment(0, 0);
+	lb_comment.set_size_request(120,-1); // makes lines wrap
+	lb_comment.set_line_wrap(true);
     hsc_volume.set_show_fill_level(true);
     hsc_volume.set_draw_value(false);
     hsc_volume.set_increments(5, 10);
-    hsc_volume.set_range(0,100);
-	hsc_volume.set_size_request(-1,20);
+    hsc_volume.set_range(0,100); // mpd also reports 0 - 100
+	hsc_volume.add_events(Gdk::SCROLL_MASK);
+	//hsc_volume.set_size_request(-1,20);
     hb_buttonrow.set_size_request(332,26);
     hb_buttonrow.set_spacing(5);
     hb_buttonrow.set_homogeneous(false);
     img_statusled.set_size_request(45,26);
-	
 	/* Dimensions: see footnote [2] */
 	
 	// inline graphics
     	// prev
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_prev, false);
-    img_mn_prev.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_prev, false);
+    img_mn_prev.set(pxb);
     bt_prev.set_image(img_mn_prev);
     	// stop
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_stop, false);
-    img_mn_stop.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_stop, false);
+    img_mn_stop.set(pxb);
     bt_stop.set_image(img_mn_stop);
     	// play
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_play, false);
-    img_mn_play.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_play, false);
+    img_mn_play.set(pxb);
     bt_play.set_image(img_mn_play);
     	// pause
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_pause, false);
-    img_mn_pause.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_pause, false);
+    img_mn_pause.set(pxb);
     	// next
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_next, false);
-    img_mn_next.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_next, false);
+    img_mn_next.set(pxb);
     bt_next.set_image(img_mn_next);
     	// playlist
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_playlist, false);
-    img_mn_playlist.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_playlist, false);
+    img_mn_playlist.set(pxb);
     bt_plst.set_image(img_mn_playlist);
-	if (usetips)
+	if (config.show_ToolTips)
 		bt_plst.set_tooltip_text("Library & Playlist");
     	// sizer
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_sizer, false);
-    img_mn_sizer.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_sizer, false);
+    img_mn_sizer.set(pxb);
     bt_sizr.set_image(img_mn_sizer);
-	if (usetips)
+	if (config.show_ToolTips)
 		bt_sizr.set_tooltip_text("Mini-Maxi mode");
     	// config
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_config, false);
-    img_mn_config.set(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_config, false);
+    img_mn_config.set(pxb);
     bt_conf.set_image(img_mn_config);
-	if (usetips)
+	if (config.show_ToolTips)
 		bt_conf.set_tooltip_text("Settings");
-    	// info (i) icon
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_info_a, false);
-	img_mn_info_a.set(pxb_pointer);
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_info_b, false);
-	img_mn_info_b.set(pxb_pointer);
-	bt_info.set_image(img_mn_info_a);
-	if (usetips)
-		bt_info.set_tooltip_text("Song information");
-    	// random
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, tb_random, false);
-    img_tb_random.set(pxb_pointer);
-    tbt_random.set_image(img_tb_random);
-	if (usetips)
-		tbt_random.set_tooltip_text("Random");
-    	// repeat
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, tb_repeat, false);
-    img_tb_repeat.set(pxb_pointer);
-    tbt_repeat.set_image(img_tb_repeat);
-	if (usetips)
-		tbt_repeat.set_tooltip_text("Repeat");
-    	// status led
-	if (usetips)
+   	// status led
+	if (config.show_ToolTips)
 		img_statusled.set_tooltip_text("Status led");
     pxb_led_playing = Gdk::Pixbuf::create_from_inline(-1, led_playing, false);
     pxb_led_noconn = Gdk::Pixbuf::create_from_inline(-1, led_noconn, false);
@@ -617,12 +706,14 @@ void gm_Player::init_widgets()
     pxb_led_stopped = Gdk::Pixbuf::create_from_inline(-1, led_stopped, false);
 	
     // put widgets together
-	add(fx_main); // main container: 4 rows
+	add(eb_all); // main container: 4 rows
+	eb_all.add(fx_main);
     fx_main.put(eb_background, 0, 0);
     	// row 1
     eb_background.add(fr_lcdisplay);
         fr_lcdisplay.add(vb_lcdisplay); // 2 rows
-            vb_lcdisplay.add(titleScroller);
+	vb_lcdisplay.add(eb_scroller);
+				eb_scroller.add(titleScroller);
             vb_lcdisplay.add(hb_trackdata); // 5 items
                 hb_trackdata.pack_start(lb_type, false, false, 6);
                 hb_trackdata.pack_start(lb_kbps, false, false, 0);
@@ -637,12 +728,9 @@ void gm_Player::init_widgets()
 		hb_center.add(img_aArt);
 		hb_center.add(vb_center_right); // 4 items
 			vb_center_right.pack_start(lb_album, false, false, 0);
-			vb_center_right.pack_start(lb_year, true, true, 0); // pushes the others up
-			vb_center_right.pack_start(hb_tbuttons, false, false, 0);
-				hb_tbuttons.pack_start(bt_info, true, true, 0);
-				hb_tbuttons.pack_start(tbt_repeat, true, true, 0);
-				hb_tbuttons.pack_end(tbt_random, true, true, 0);
-			vb_center_right.pack_end(hsc_volume, false, false, 2);
+			vb_center_right.pack_start(lb_year, false, false, 0); // pushes the others up
+			vb_center_right.pack_start(lb_comment, true, true, 0);
+			vb_center_right.pack_end(hsc_volume, false, false, 0);
 		// row 4: 8 items
 	fx_main.put(hb_buttonrow, 0, btrowPos);
 		hb_buttonrow.pack_start(bt_prev, true, true, 0);
@@ -655,18 +743,18 @@ void gm_Player::init_widgets()
 		hb_buttonrow.pack_end(bt_conf, true, true, 0);
 
     // show the main box and it's child widgets
-	if (b_winIsMax)
-    	fx_main.show_all();
+	if (config.PlayerWindow_Max)
+    	eb_all.show_all();
 	else
 	{
+		eb_all.show();
 		fx_main.show();
 		eb_background.show_all();
 		pb_timeprogress.show();
 		hb_buttonrow.show_all();		
 	}
 
-	b_trayicon = config.get_bool("use_TrayIcon");
-	if (b_trayicon)
+	if (b_useTrayIcon)
     	tIcon_create();
 }
 
@@ -702,27 +790,40 @@ void gm_Player::init_signals()
     bt_conf.signal_clicked().connect(sigc::bind<-1, int>(
               sigc::mem_fun(*this, &gm_Player::on_signal), ID_sets));
 
-    bt_info.signal_clicked().connect(sigc::bind<-1, int>(
-              sigc::mem_fun(*this, &gm_Player::on_signal), ID_info));
-
-    tbt_repeat.signal_clicked().connect(sigc::bind<-1, int>(
-              sigc::mem_fun(*this, &gm_Player::on_signal), ID_rept));
-
-    tbt_random.signal_clicked().connect(sigc::bind<-1, int>(
-              sigc::mem_fun(*this, &gm_Player::on_signal), ID_rand));
-
 	hsc_volume.signal_value_changed().connect(sigc::bind<-1, int>(
               sigc::mem_fun(*this, &gm_Player::on_signal), ID_volm));
 	
 	settingsWindow.signal_pleaseconnect.connect(sigc::mem_fun(*this, &gm_Player::on_connectrequest) );
 	settingsWindow.signal_settingssaved.connect(sigc::mem_fun(*this, &gm_Player::on_settingssaved) );
 	settingsWindow.signal_applyfonts.connect(sigc::mem_fun(*this, &gm_Player::set_fonts) );
+	
+	libraryWindow.signal_hide.connect(sigc::mem_fun(*this, &gm_Player::on_library_hide) );
 
 	// return bool
 	eb_time.signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_timeClicked) );
-
+	eb_all.signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_playerRClicked) );
+	eb_scroller.signal_enter_notify_event().connect(sigc::mem_fun(*this, &gm_Player::on_enter_scroller) );
+	eb_scroller.signal_leave_notify_event().connect(sigc::mem_fun(*this, &gm_Player::on_leave_scroller) );
 	pb_timeprogress.signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_progressClicked) );
+	hsc_volume.signal_scroll_event().connect(sigc::mem_fun(*this, &gm_Player::on_tray_or_vol_Scrolled) ); 
+}
 
+
+void gm_Player::on_library_hide()
+{
+	if (!config.toggle_Player)
+		b_libraryWindow_hidden = true;
+}
+
+bool gm_Player::on_enter_scroller(GdkEventCrossing *e)
+{
+	titleScroller.on_mouse_enter();
+	return false;
+}
+bool gm_Player::on_leave_scroller(GdkEventCrossing *e)
+{
+	titleScroller.on_mouse_leave();
+	return false;
 }
 
 
@@ -734,31 +835,47 @@ void gm_Player::on_signal_host_port_pwd(ustring host, int port, ustring pwd)
 }
 
 
-bool gm_Player::on_timeClicked(GdkEventButton*)
+bool gm_Player::on_playerRClicked(GdkEventButton* event)
 {
+	if( (event->button == 3) )
+	{
+		rClickMenu.popup(event->button, event->time);
+		return true;  // buck stops here
+	}
+	else
+		return false;
+}
+
+bool gm_Player::on_timeClicked(GdkEventButton* event)
+{
+	if( event->button != 1)
+		return false;
+	
 	if (current_status > 0) // STOP, PLAY or PAUSE
-		b_timeremain = !b_timeremain;
-	return false;
+		config.use_TimeRemaining = !config.use_TimeRemaining;
+	return true;
 }
 
 
-bool gm_Player::on_progressClicked(GdkEventButton* eb)
+bool gm_Player::on_progressClicked(GdkEventButton* event)
 {
+	if( event->button != 1)
+		return false;
+	
 	if (current_status != MPD_STATUS_STATE_PLAY && current_status != MPD_STATUS_STATE_PAUSE)
 		return false;
 
-	double fraction = ((*eb).x)/(double)330;
+	double fraction = ((*event).x)/(double)330;
 	pb_timeprogress.set_fraction(fraction);
 
 	int percent = (int)(fraction * songTotalTime);
 	mpdCom.set_seek(percent);
-	return false;
+	return true;
 }
 
 // apply new albumart, fonts etc.
 void gm_Player::on_settingssaved()
 {
-	custom_art_file = config.get_string("AlbumArt_File");
 	set_fonts();
 	get_mpd_paths();
 }
@@ -792,7 +909,7 @@ void gm_Player::on_newStatus( statInfo sInfo )
 		if (!b_stream && songTotalTime > 0)
 		{
 			double fraction = timenow/songTotalTime;
-			// some tracks play a bit too long (honestly)
+			// some library play a bit too long (honestly)
 			if (fraction > 1.0)
 				fraction = 1.0;
 			// progressbar wants 2.00 decimals
@@ -812,11 +929,11 @@ void gm_Player::on_newStatus( statInfo sInfo )
 		}
 		else
 		{
-			if (b_timeremain)
+			if (config.use_TimeRemaining)
 				timenow = songTotalTime - timenow;
 			
 			ustring timestring = "";
-			if (b_timeremain)
+			if (config.use_TimeRemaining)
 				timestring = timestring + "- ";
 			timestring = timestring + into_time((int)timenow);
 			lb_time.set_markup("<b>" + timestring + "</b>");
@@ -847,17 +964,28 @@ void gm_Player::on_newStatus( statInfo sInfo )
 	
 	if (sInfo.mpd_random != b_random)
 	{
-		//  1st set bool, next set button
 		b_random = sInfo.mpd_random;
-		tbt_random.set_active(b_random);
+		libraryWindow.set_random(b_random);
 	}
 	
 	if (sInfo.mpd_repeat != b_repeat)
 	{
-		//  1st set bool, next set button
 		b_repeat = sInfo.mpd_repeat;
-		tbt_repeat.set_active(b_repeat);
+		libraryWindow.set_repeat(b_repeat);
 	}
+	
+	if (sInfo.mpd_single != b_single)
+	{
+		b_single = sInfo.mpd_single;
+		libraryWindow.set_single(b_single);
+	}
+	
+	if (sInfo.mpd_consume != b_consume)
+	{
+		b_consume = sInfo.mpd_consume;
+		libraryWindow.set_consume(b_consume);
+	}
+	
 }
 
 // Signal handler.
@@ -880,6 +1008,7 @@ void gm_Player::on_signal(int sigID)
 				break;
 			
             set_status(MPD_STATUS_STATE_STOP);
+			titleScroller.set_pause(true);
 			mpdCom.stop();
             break;
         }
@@ -891,6 +1020,7 @@ void gm_Player::on_signal(int sigID)
 				case MPD_STATUS_STATE_PLAY:
             	{
                 	set_status(MPD_STATUS_STATE_PAUSE);
+					titleScroller.set_pause(true);
 					mpdCom.pause();
 					break;
             	}
@@ -898,6 +1028,7 @@ void gm_Player::on_signal(int sigID)
 				case MPD_STATUS_STATE_PAUSE:
             	{
 					set_status(MPD_STATUS_STATE_PLAY);
+					titleScroller.set_pause(false);
 					mpdCom.resume();
 					break;
             	}
@@ -905,6 +1036,7 @@ void gm_Player::on_signal(int sigID)
 				case MPD_STATUS_STATE_STOP:
             	{
                 	set_status(MPD_STATUS_STATE_PLAY);
+					titleScroller.set_pause(false);
 					mpdCom.play();
 					break;
             	}
@@ -912,6 +1044,7 @@ void gm_Player::on_signal(int sigID)
 				case MPD_STATUS_STATE_UNKNOWN:
             	{
                 	set_status(MPD_STATUS_STATE_PLAY);
+					titleScroller.set_pause(false);
 					mpdCom.play(true);
 					break;
             	}
@@ -933,61 +1066,39 @@ void gm_Player::on_signal(int sigID)
             break;
         }
 				
-		case ID_info:
-		{
-			if (tagInfo.is_visible())
-				tagInfo.hide();
-			else
-			{
-				int xpos, ypos;
-				get_position(xpos, ypos);
-				if (xpos + 360 + 250 < Gdk::screen_width())
-					tagInfo.show_at(xpos + 360, ypos);
-				else
-					tagInfo.show_at(xpos - 270, ypos);
-			}
-			break;
-		}
-				
 		case ID_sets:
 		{
 			if (settingsWindow.is_visible())
+			{
+				settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
 				settingsWindow.hide();
+			}
 			else
+			{
+				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
 				settingsWindow.load_and_show();
+				settingsWindow.present();
+			}
 			break;
 		}
 
 		case ID_plst:
-		{
-			if (tracksWindow.is_visible())
-				tracksWindow.hide();
+
+		{   
+			if (libraryWindow.is_visible())
+			{
+				libraryWindow.get_position(config.libraryWindow_Xpos, config.libraryWindow_Ypos);
+				libraryWindow.hide();
+				on_library_hide();
+			}
 			else
-				tracksWindow.show();
+			{
+				libraryWindow.move(config.libraryWindow_Xpos, config.libraryWindow_Ypos);
+				libraryWindow.show();
+				libraryWindow.present();
+			}
 			break;
 		}
-				
-        case ID_rand:
-        {
-            bool status = tbt_random.get_active();
-            if (b_random != status) // avoid loop!
-            {
-				b_random = status;
-				mpdCom.set_random(status);
-            }
-            break;
-        }
-
-        case ID_rept:
-        {
-			bool status = tbt_repeat.get_active();
-            if (b_repeat != status) // avoid loop!
-            {
-				b_repeat = status;
-				mpdCom.set_repeat(status);;
-            }
-            break;
-        }
 
         case ID_volm: // see footnote [1]
         {
@@ -1008,19 +1119,19 @@ void gm_Player::on_signal(int sigID)
             if (b_minmax_busy)
                 break;
 
-            if (b_winIsMax)
+            if (config.PlayerWindow_Max)
             {
                 b_minmax_xfade = true;
 				alphacycler = 255;
                 minmaxtimer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Player::miniMice), 12);
-                b_winIsMax = false;
+                config.PlayerWindow_Max = false;
             }
             else
             {
                 b_minmax_xfade = false;
 				alphacycler = 0;
                 minmaxtimer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Player::maxiMice), 12);
-                b_winIsMax = true;
+                config.PlayerWindow_Max = true;
             }
             break;
         }
@@ -1031,6 +1142,42 @@ void gm_Player::on_signal(int sigID)
 			break;
 		}
     }
+}
+
+void gm_Player::on_set_libtoggle()
+{
+	config.toggle_Library = !config.toggle_Library;
+	
+	if (!config.toggle_Library)
+	{
+		if (!config.toggle_Player)
+		{
+			TogglePlayer->set_active(true);
+			config.toggle_Player = true;
+		}
+		
+		if (!get_window()->is_visible())
+			b_playerWindow_hidden = true;
+	}
+
+}
+
+void gm_Player::on_set_playertoggle()
+{
+	config.toggle_Player = !config.toggle_Player;
+	
+	if (!config.toggle_Player)
+	{
+		if (!config.toggle_Library)
+		{
+			ToggleLibrary->set_active(true);
+			config.toggle_Library = true;
+		}
+		
+		if (!libraryWindow.is_visible())
+			b_libraryWindow_hidden = true;
+	}
+
 }
 
 
@@ -1044,47 +1191,46 @@ void gm_Player::tIcon_create()
     // menu icons (custom stock items)
     Glib::RefPtr<Gtk::IconFactory> gm_Ifact = Gtk::IconFactory::create();
     Gtk::IconSource gm_Isrc;
+	Glib::RefPtr<Gdk::Pixbuf> pxb;
 	
-	Glib::RefPtr<Gdk::Pixbuf> pxb_pointer;
-	
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, mn_playlist, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, mn_playlist, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset1;
     gm_Iset1.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::INDEX, gm_Iset1);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_exit, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_exit, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset2;
     gm_Iset2.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::QUIT, gm_Iset2);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_prev, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_prev, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset3;
     gm_Iset3.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::MEDIA_PREVIOUS, gm_Iset3);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_stop, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_stop, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset4;
     gm_Iset4.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::MEDIA_STOP, gm_Iset4);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_play, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_play, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset5;
     gm_Iset5.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::MEDIA_PLAY, gm_Iset5);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_pause, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_pause, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset6;
     gm_Iset6.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::MEDIA_PAUSE, gm_Iset6);
 
-    pxb_pointer = Gdk::Pixbuf::create_from_inline(-1, st_next, false);
-    gm_Isrc.set_pixbuf(pxb_pointer);
+    pxb = Gdk::Pixbuf::create_from_inline(-1, st_next, false);
+    gm_Isrc.set_pixbuf(pxb);
     Gtk::IconSet gm_Iset7;
     gm_Iset7.add_source (gm_Isrc);
     gm_Ifact->add(Gtk::Stock::MEDIA_NEXT, gm_Iset7);
@@ -1093,29 +1239,42 @@ void gm_Player::tIcon_create()
 
     // Setting up the UIManager:
     tIcon_ActionGroup = Gtk::ActionGroup::create();
+
+	if (config.toggle_Player)
+		TogglePlayer = Gtk::ToggleAction::create("TogglePlayer", "Restore Player", "", true);
+	else
+		TogglePlayer = Gtk::ToggleAction::create("TogglePlayer", "Restore Player", "", false);		
+	TogglePlayer->signal_toggled().connect(sigc::mem_fun(*this, &gm_Player::on_set_playertoggle) );
+	tIcon_ActionGroup->add(TogglePlayer);
+
+	if (config.toggle_Library)
+		ToggleLibrary = Gtk::ToggleAction::create("ToggleLibrary", "Restore Library", "", true);
+	else
+		ToggleLibrary = Gtk::ToggleAction::create("ToggleLibrary", "Restore Library", "", false);		
+	ToggleLibrary->signal_toggled().connect(sigc::mem_fun(*this, &gm_Player::on_set_libtoggle) );
+	tIcon_ActionGroup->add(ToggleLibrary);
 	
-    tIcon_ActionGroup->add(
-    Gtk::Action::create("Prev", Gtk::Stock::MEDIA_PREVIOUS),
+    tIcon_ActionGroup->add(Gtk::Action::create("Prev", Gtk::Stock::MEDIA_PREVIOUS, "Previous"),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_prev) );
 
     tIcon_ActionGroup->add(
-    Gtk::Action::create("Stop",Gtk::Stock::MEDIA_STOP),
+    Gtk::Action::create("Stop",Gtk::Stock::MEDIA_STOP, "Stop"),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_stop) );
 
     tIcon_ActionGroup->add(
-    Gtk::Action::create("Pause",Gtk::Stock::MEDIA_PAUSE),
+    Gtk::Action::create("Pause",Gtk::Stock::MEDIA_PAUSE, "Pause"),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_play) );
 
     tIcon_ActionGroup->add(
-    Gtk::Action::create("Play",Gtk::Stock::MEDIA_PLAY),
+    Gtk::Action::create("Play",Gtk::Stock::MEDIA_PLAY, "Play"),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_play) );
 
     tIcon_ActionGroup->add(
-    Gtk::Action::create("Next",Gtk::Stock::MEDIA_NEXT),
+    Gtk::Action::create("Next",Gtk::Stock::MEDIA_NEXT, "Next"),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_next) );
 
     tIcon_ActionGroup->add(
-    Gtk::Action::create("Quit", Gtk::Stock::QUIT),
+    Gtk::Action::create("Quit", Gtk::Stock::QUIT, "Quit Guimup"),
     sigc::mem_fun(*this, &gm_Player::hide) );
 
     tIcon_UIManager = Gtk::UIManager::create();
@@ -1124,6 +1283,9 @@ void gm_Player::tIcon_create()
     Glib::ustring ui_info =
     "<ui>"
     "  <popup name='Popup'>"
+  "    <menuitem action='TogglePlayer' />"	
+  "    <menuitem action='ToggleLibrary' />"			
+	"	<separator/>"
     "    <menuitem action='Prev' />"
     "    <menuitem action='Stop' />"
     "    <menuitem action='Pause'/>"
@@ -1139,74 +1301,231 @@ void gm_Player::tIcon_create()
     tIcon_ActionGroup->get_action("Pause")->set_visible(false);
 
     // Setting up the StatusIcon:
-    trayIcon = Gtk::StatusIcon::create(pxb_st_noconn);
-    trayIcon->set_tooltip("Guimup");
+	trayIcon = gm_trayIcon::create();
+	// trayIcon = Glib::RefPtr<gm_trayicon>(new gm_trayicon());
+	trayIcon->set_tooltip("Guimup");
+	
+	// StatusIcon signals
+    //void
+    trayIcon->signal_activate().connect(sigc::mem_fun(*this, &gm_Player::tIcon_toggle_hide) );
+    trayIcon->signal_popup_menu().connect(sigc::mem_fun(*this, &gm_Player::tIcon_on_popup) );
+    //bool
+	trayIcon->signal_scroll_event().connect(sigc::mem_fun(*this, &gm_Player::on_tray_or_vol_Scrolled) ); 		// gtkmm 2.16	!
+	trayIcon->signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_trayClicked) ); 			// gtkmm 2.16   !	
+}
 
-    // StatusIcon signals
-    trayIcon->signal_activate().connect(
-    sigc::mem_fun(*this, &gm_Player::tIcon_toggle_hide) );
 
-    trayIcon->signal_popup_menu().connect(
-    sigc::mem_fun(*this, &gm_Player::tIcon_on_popup) );
+bool gm_Player::on_trayClicked(GdkEventButton* eb)
+{
+	if (eb->button == 2)
+		on_signal(ID_play);
+	return false;
+}
+
+bool gm_Player::on_tray_or_vol_Scrolled(GdkEventScroll* es)
+{
+	if (!b_connected)
+		return false;
+	
+	if (es->direction == GDK_SCROLL_UP)
+	{
+		mpdCom.volume_up(10);
+	}
+	else
+	{
+		mpdCom.volume_down(10);
+	}
+    return true;
 }
 
 
 void gm_Player::tIcon_toggle_hide()
 {
-    if ( get_window()->is_visible() )
-    {
-         get_position(win_pos.first, win_pos.second);
-         get_window()->hide();
-    }
-    else
-    {
-        get_window()->show();
-        move(win_pos.first, win_pos.second);
-    }
+	if (config.toggle_Player)   /////// Player Rules ///////////////////////////
+	{
+		// [1] Player is visible but minimized (or on another desktop): present
+		if (get_window() != NULL && get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
+		{
+			// first the library
+			if (libraryWindow.is_visible() && !config.toggle_Library)
+			{
+				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+				libraryWindow.hide();
+				b_libraryWindow_hidden = true;
+			}
+			 else
+			if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
+			{
+				libraryWindow.present();;
+			}
+			else
+			if (b_libraryWindow_hidden && config.toggle_Library)
+			{
+				libraryWindow.show();
+				libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+				libraryWindow.present();
+				b_libraryWindow_hidden = false;
+			}
+
+			// settingswindow: always in sync with the player
+			if (settingsWindow.get_window() != NULL && settingsWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
+			{
+				settingsWindow.present();
+			}
+			else
+			if (b_settingsWindow_hidden)
+			{
+				settingsWindow.show();
+				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);			
+				settingsWindow.present();
+				b_settingsWindow_hidden = false;
+			}
+			
+			// finally: the player on top
+			move(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+			present();
+			
+			return;
+		}
+		
+		// [2] Player is visible, not minimized (and not another desktop): hide all
+		if ( get_window()->is_visible() )
+		{
+			get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+			get_window()->hide();
+			b_playerWindow_hidden = true;
+			// settings
+			if (settingsWindow.is_visible())
+			{
+				settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
+				settingsWindow.hide();
+				b_settingsWindow_hidden = true;
+			}
+			// library
+			if (libraryWindow.is_visible())
+			{
+				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+				libraryWindow.hide();
+				b_libraryWindow_hidden = true;
+			}
+			return;
+		}
+		
+		// [3] Player is hidden: show 	
+		if (b_playerWindow_hidden)
+		{
+			// first the library
+			if (libraryWindow.is_visible() && !config.toggle_Library)
+			{
+				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+				libraryWindow.hide();
+				b_libraryWindow_hidden = true;
+			}
+			else
+			if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED )
+			{
+					libraryWindow.present();
+			}
+			else
+			if (b_libraryWindow_hidden && config.toggle_Library)
+			{
+				libraryWindow.show();
+				libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+				libraryWindow.present();
+				b_libraryWindow_hidden = false;
+			}
+			
+			// settingswindow (cannnot be minimized here)
+			if (b_settingsWindow_hidden)
+			{
+				settingsWindow.show();
+				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);			
+				settingsWindow.present();
+				b_settingsWindow_hidden = false;
+			}
+			// finally: the player on top
+			move(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+			b_playerWindow_hidden = false;
+			present();
+			return;
+		}		
+	}
+	else	              /////////////////// Library Rules ////////////////////
+	{
+		// config.toggle_Player == false: player and settings must be hidden
+		if ( get_window()->is_visible() )
+		{
+			get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+			get_window()->hide();
+			b_playerWindow_hidden = true;
+			// settings
+			if (settingsWindow.is_visible())
+			{
+				settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
+				settingsWindow.hide();
+				b_settingsWindow_hidden = true;
+			}
+		}
+		
+		// library (config.toggle_Library == true)
+		if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
+				libraryWindow.present();
+		else			
+		if ( libraryWindow.is_visible() )
+		{
+			libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+			libraryWindow.hide();
+			b_libraryWindow_hidden = true;
+		}
+		else // show, even if !b_libraryWindow_hidden
+		{
+			libraryWindow.show();
+			libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+			libraryWindow.present();
+			b_libraryWindow_hidden = false;
+		}
+	}
 }
 
 
 bool gm_Player::on_delete_event(GdkEventAny* event)
 {
-	if(b_trayicon)
+	if(b_useTrayIcon)
 	{
+		get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
     	tIcon_toggle_hide();
-    	return true;
+    	return true; // ignore
 	}
 	else
-		return false; // quit
+		return false; // accept // 'get_position' is done in on_hide()
 }
+
 
 // window calls this on quit
 void gm_Player::on_hide()
 {
-	int posx, posy;
-	get_position(posx, posy);
-	config.set_int("PlayerWindow_Xpos", posx);
-	config.set_int("PlayerWindow_Ypos", posy);
-	config.set_bool("PlayerWindow_Max", b_winIsMax);
-	config.set_bool("use_TimeRemaining", b_timeremain);
-	// tracks window
-	tr_settings trs = tracksWindow.get_trSettings();
-	config.set_int("TracksWindow_panePos", trs.pane_pos);
-	config.set_int("TracksWindow_Xpos", trs.x_pos);
-    config.set_int("TracksWindow_Ypos", trs.y_pos);
-    config.set_int("TracksWindow_W", trs.w_width);
-    config.set_int("TracksWindow_H", trs.w_height);
-	config.set_int("Tracks_DBmode", trs.db_mode);
+	// player window
+	if (is_visible())
+		get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+	// library window
+	if (libraryWindow.is_visible())
+		libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
+	libraryWindow.get_trSettings();
 	// settings window
-	st_posxy sts = settingsWindow.get_stPos();
-	config.set_int("SettingsWindow_Xpos", sts.x_pos);
-    config.set_int("SettingsWindow_Ypos", sts.y_pos);
+	if (settingsWindow.is_visible())
+		settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
 	// finally
 	config.save_config();
-	if (config.get_bool("QuitMPD_onQuit"))
+	if (config.QuitMPD_onQuit)
 	{
-		cout << "executing: " << config.get_string("MPD_onQuit_command") << endl;
-		system ( (config.get_string("MPD_onQuit_command")).data() );
+		cout << "executing: " << config.MPD_onQuit_command << endl;
+		system ( (config.MPD_onQuit_command).data() );
 	}
+	cout << "Disconnecting mpd" << endl;
+	mpdCom.mpd_disconnect();
 	cout << "Goodbye!" << endl;
 }
+
 
 // Show the Tray-Icon popup menu:
 void gm_Player::tIcon_on_popup(guint button, guint32 time)
@@ -1217,38 +1536,28 @@ void gm_Player::tIcon_on_popup(guint button, guint32 time)
     trayIcon->popup_menu_at_position(*pMenu, button, time);
 }
 
-// Activate blinking on StatusIcon
-void gm_Player::tIcon_blink()
-{
-    if ( trayIcon->get_blinking() )
-    return;
-
-    // Stop the blinking mode (after 5 sec):
-    struct TimeOut
-    {
-        static bool stop_blinking(Glib::RefPtr<Gtk::StatusIcon>& refSI)
-        {
-            refSI->set_blinking(false);
-            return false; // terminate timeout
-        }
-    };
-
-    Glib::signal_timeout().connect(
-    sigc::bind(sigc::ptr_fun(&TimeOut::stop_blinking),trayIcon), 5000);
-    // start the blinking mode (now)
-    trayIcon->set_blinking();
-}
-
 
 void gm_Player::on_newSong( songInfo newSong )
 {
+	fullpath = "";
+
 	if (newSong.nosong)
 	{
-		bt_info.set_image(img_mn_info_a);
+		if  (b_nosong)
+			return;
+		
 		cout << "No song" << endl;
+		img_aArt.set_tooltip_text("No song");
+		
+		Gtk::Menu::MenuList& menulist = rClickMenu.items();
+		for (int i = 0; i < 4; i++)
+			menulist[i].set_sensitive(false);
+		pb_timeprogress.set_fraction(0.0);
+		b_nosong = true;
 		return;
 	}
 
+	b_nosong = false;
 	cout << "New song: " << newSong.songNr + 1 << endl;
 	
 	ustring fname = "";
@@ -1264,15 +1573,16 @@ void gm_Player::on_newSong( songInfo newSong )
 		fname = fname.substr(fname.rfind("/")+1, fname.length());
 	}
 
-	// streams start with "http:"	
+	// streams start with "http"
 	if (((path.substr(0,5)).lowercase()) == "http:")
 	{
-		set_albumart(path, true);
+		set_albumart(path);
 		lb_type.set_markup("URL");
 		lb_album.set_markup("Audio stream");
 		lb_year.set_text("");
-		// newSong->artist is NULL !
-		ustring artist_title = "waiting for info";
+		lb_comment.set_text("");
+		// note: newSong->artist is NULL !
+		ustring artist_title = "no info";
 		if (!newSong.name.empty())
 		{
 			artist_title = newSong.name;
@@ -1283,22 +1593,32 @@ void gm_Player::on_newSong( songInfo newSong )
 				artist_title = newSong.title;
 		}
 		titleScroller.set_title(artist_title);
-		trayIcon->set_tooltip(artist_title);
-		bt_info.set_image(img_mn_info_a);
+		if (b_useTrayIcon)
+			trayIcon->set_tooltip(artist_title);
+		
+		if (!b_stream)
+		{
+			Gtk::Menu::MenuList& menulist = rClickMenu.items();
+			for (int i = 0; i < 4; i++)
+				menulist[i].set_sensitive(false);
+		}
+		
 		b_stream = true;
+		pb_timeprogress.set_fraction(0.0);
+		img_aArt.set_tooltip_text("Streaming media");
 		return;
 	}
 	else
 		b_stream = false;
 	
 	// album art
-	set_albumart(path, false);
+	set_albumart(path);
 
 	// extension
 	if (fname.empty())
 	{
-		fname = "File name?!";
-		lb_type.set_text("??");
+		fname = "File name?";
+		lb_type.set_text("?");
 	}
 	else
 	{
@@ -1306,31 +1626,34 @@ void gm_Player::on_newSong( songInfo newSong )
 		lb_type.set_markup(xtension);
 	}
 
-	// artist & title
-	ustring artist = "??";
+	// artist
+	ustring artist = "?";
 	if (!newSong.artist.empty())
 		artist = newSong.artist;
 	
-	ustring title = "??";
+	// title
+	ustring title = "?";
 	if (!newSong.title.empty())	
 		title = newSong.title;
 
 	if (artist.empty() && title.empty())
 	{
 		titleScroller.set_title(fname);
-		trayIcon->set_tooltip(fname);
+		if (b_useTrayIcon)
+			trayIcon->set_tooltip(fname);
 	}
 	else
 	{
 		titleScroller.set_title(artist, title);
-		trayIcon->set_tooltip( " " + artist + " : " + title + " ");
-
+		if (b_useTrayIcon)
+			trayIcon->set_tooltip_markup( " <b>" + escapeString(artist) + "</b> &#10; <i>" + escapeString(title) + "</i> "); // gtkmm 2.16 // escape for markup!!
 	}
+	
 	// Now we can (and must) escape for the tagInfo dialog
 	artist = escapeString(artist);
-	title = escapeString(title);
+	title = escapeString(title);	
 	
-	//album info
+	//album
 	ustring album = "";
 	if (!newSong.album.empty())
 	{
@@ -1338,14 +1661,13 @@ void gm_Player::on_newSong( songInfo newSong )
 		album = escapeString(album);
 	}
     lb_album.set_markup("<b>" + album + "</b>");
-
+	
+	//track
 	ustring track = "";
 	if (!newSong.track.empty())
 		track = newSong.track;
-
-	ustring disc = "";
-	if (!newSong.disc.empty())
-		disc = newSong.disc;
+	if (track.size() == 1)
+		track = "0" + track;
 
 	// year
 	ustring year = "";
@@ -1364,44 +1686,29 @@ void gm_Player::on_newSong( songInfo newSong )
 		genre = escapeString(genre);
 	}
 
-	bool b_extra_info = false;
-	
-	// composer
-	ustring composer = "";
-	if (!newSong.composer.empty())
-	{
-		composer = newSong.composer;
-		composer = escapeString(composer);
-		b_extra_info = true;
-	}
-
-	// performer
-	ustring performer = "";
-	if (!newSong.performer.empty())
-	{
-		performer = newSong.performer;
-		performer = escapeString(performer);
-		b_extra_info = true;
-	}
-	
 	// comment
 	ustring comment = "";
 	if (!newSong.comment.empty())
 	{
 		comment = newSong.comment;
 		comment = escapeString(comment);
-		b_extra_info = true;
 	}
-	
-	if (b_extra_info)
-		bt_info.set_image(img_mn_info_b);
-	else
-		bt_info.set_image(img_mn_info_a);
-	
-	tagInfo.set(artist, title, album, track, disc, year,
-				genre, composer, performer, comment);
-}
 
+	lb_comment.set_markup("<small>" + comment + "</small>");
+	
+	fullpath = mpd_music_path + newSong.file;
+	img_aArt.set_tooltip_text("Right-click for menu");
+	
+	Gtk::Menu::MenuList& menulist = rClickMenu.items();
+	if (current_art_path == "nopic")
+		menulist[0].set_sensitive(false);
+	else
+		menulist[0].set_sensitive(true);		
+
+	menulist[1].set_sensitive(true);		
+	menulist[2].set_sensitive(true);
+	menulist[3].set_sensitive(true);
+}
 
 std::string gm_Player::into_string(int in)
 {
@@ -1597,52 +1904,6 @@ ustring gm_Player::escapeString(ustring str)
 	return str;
 }
 
-void gm_Player::set_childwindows()
-{
-	tr_settings tsets;
-	int pos  = config.get_int("TracksWindow_panePos");
-	if (pos < 240)
-		pos  = 240;
-	tsets.pane_pos = pos;
-	int xpos = config.get_int("TracksWindow_Xpos");
-	if (xpos < 0)
-		xpos = 0;
-	tsets.x_pos = xpos;
-	int ypos = config.get_int("TracksWindow_Ypos");
-	if (ypos < 0)
-		ypos = 0;
-	tsets.y_pos = ypos;
-	int width = config.get_int("TracksWindow_W");
-	if (width < 500)
-		width = 500;
-	tsets.w_width = width;
-	int height = config.get_int("TracksWindow_H");
-	if (height < 180)
-		height = 180;
-	tsets.w_height = height;
-	int dbm = config.get_int("Tracks_DBmode");
-	if (dbm < 0 || dbm > 4)
-		dbm = 0;
-	tsets.db_mode = dbm;
-	
-	bool tips = config.get_bool("show_ToolTips");
-	tsets.b_ttips = tips;
-
-	tracksWindow.set_trSettings(tsets);
-	
-	st_posxy ssets;
-	
-	xpos = config.get_int("SettingsWindow_Xpos");
-	if (xpos < 0)
-		xpos = 0;
-	ssets.x_pos = xpos;
-	ypos = config.get_int("SettingsWindow_Ypos");
-	if (ypos < 0)
-		ypos = 0;
-	ssets.y_pos = ypos;	
-	
-	settingsWindow.set_stPos(ssets);
-}
 
 gm_Player::~gm_Player()
 {

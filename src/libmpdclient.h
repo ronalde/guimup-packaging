@@ -37,6 +37,7 @@
 #  define __W32API_USE_DLLIMPORT__ 1
 #endif
 
+#include "str_pool.h"
 #include <sys/time.h>
 #include <stdarg.h>
 #define MPD_BUFFER_MAX_LENGTH	50000
@@ -148,6 +149,9 @@ void mpd_closeConnection(mpd_Connection * connection);
  */
 void mpd_clearError(mpd_Connection * connection);
 
+/* added by unK, make this extern as I want to use it */
+void mpd_executeCommand(mpd_Connection * connection, const char * command);
+
 /* STATUS STUFF */
 
 /* use these with status.state to determine what state the player is in */
@@ -169,6 +173,10 @@ typedef struct mpd_Status {
 	int repeat;
 	/* 1 if random is on, 0 otherwise */
 	int random;
+	/* 1 if single mode is on, 0 otherwise */
+	int single;
+	/* 1 if consume mode is on, 0 otherwise */
+	int consume;
 	/* playlist length */
 	int playlistLength;
 	/* playlist, use this to determine when the playlist has changed */
@@ -430,6 +438,13 @@ void mpd_sendLsInfoCommand(mpd_Connection * connection, const char * dir);
 #define MPD_TABLE_ARTIST	MPD_TAG_ITEM_ARTIST
 #define MPD_TABLE_ALBUM		MPD_TAG_ITEM_ALBUM
 #define MPD_TABLE_TITLE		MPD_TAG_ITEM_TITLE
+#define MPD_TABLE_TRACK		MPD_TAG_ITEM_TRACK
+#define MPD_TABLE_GENRE		MPD_TAG_ITEM_GENRE
+#define MPD_TABLE_DATE		MPD_TAG_ITEM_DATE
+#define MPD_TABLE_COMPOSER	MPD_TAG_ITEM_COMPOSER
+#define MPD_TABLE_PERFORMER	MPD_TAG_ITEM_PERFORMER
+#define MPD_TABLE_COMMENT	MPD_TAG_ITEM_COMMENT
+#define MPD_TABLE_DISC		MPD_TAG_ITEM_DISC
 #define MPD_TABLE_FILENAME	MPD_TAG_ITEM_FILENAME
 
 void mpd_sendSearchCommand(mpd_Connection * connection, int table,
@@ -509,6 +524,10 @@ void mpd_sendRepeatCommand(mpd_Connection * connection, int repeatMode);
 
 void mpd_sendRandomCommand(mpd_Connection * connection, int randomMode);
 
+void mpd_sendSingleCommand(mpd_Connection * connection, int singleMode);
+
+void mpd_sendConsumeCommand(mpd_Connection * connection, int consumeMode);
+
 void mpd_sendSetvolCommand(mpd_Connection * connection, int volumeChange);
 
 /* WARNING: don't use volume command, its depreacted */
@@ -516,7 +535,7 @@ void mpd_sendVolumeCommand(mpd_Connection * connection, int volumeChange);
 
 void mpd_sendCrossfadeCommand(mpd_Connection * connection, int seconds);
 
-void mpd_sendUpdateCommand(mpd_Connection * connection, char * path);
+void mpd_sendUpdateCommand(mpd_Connection * connection, const char * path);
 
 /* returns the update job id, call this after a update command*/
 int mpd_getUpdateId(mpd_Connection * connection);
@@ -594,7 +613,7 @@ char *mpd_getNextTagType(mpd_Connection * connection);
  * List the content, with full metadata, of a stored playlist.
  *
  */
-void mpd_sendListPlaylistInfoCommand(mpd_Connection *connection, char *path);
+void mpd_sendListPlaylistInfoCommand(mpd_Connection *connection, const char *path);
 
 /**
  * @param connection a MpdConnection
@@ -653,16 +672,16 @@ void mpd_startPlaylistSearch(mpd_Connection *connection, int exact);
 
 void mpd_startStatsSearch(mpd_Connection *connection);
 
-void mpd_sendPlaylistClearCommand(mpd_Connection *connection, char *path);
+void mpd_sendPlaylistClearCommand(mpd_Connection *connection, const char *path);
 
 void mpd_sendPlaylistAddCommand(mpd_Connection *connection,
-                                char *playlist, char *path);
+                                const char *playlist, const char *path);
 
 void mpd_sendPlaylistMoveCommand(mpd_Connection *connection,
-                                 char *playlist, int from, int to);
+                                 const char *playlist, int from, int to);
 
 void mpd_sendPlaylistDeleteCommand(mpd_Connection *connection,
-                                   char *playlist, int pos);
+                                   const char *playlist, int pos);
 #ifdef __cplusplus
 }
 #endif
