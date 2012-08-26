@@ -91,7 +91,6 @@ private:
 		b_dragadded,
 		b_plistbusy,
 		b_streamplaying;
-    ustring plistPath;
 	std::list<Gtk::TargetEntry> DnDlist;
     int current_status,
 		current_songNum,

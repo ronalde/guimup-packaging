@@ -30,6 +30,7 @@
 #define CMD_MOV 4 // move to moveTo
 #define CMD_DPL 5 // delete playlist
 
+#include <stdlib.h>
 #include <list>
 #include <glibmm/ustring.h>
     using Glib::ustring;

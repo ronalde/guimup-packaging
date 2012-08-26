@@ -38,6 +38,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <stdlib.h>
 #include <iostream>
     using std::cout;
     using std::endl;
@@ -86,6 +87,7 @@ public:
 	void connect_server(ustring, int, ustring);
 	void disconnect_server();
 	void set_listfont(ustring font);
+	void set_plistPath(ustring);
 
 protected:
 

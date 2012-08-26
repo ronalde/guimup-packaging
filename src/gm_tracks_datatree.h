@@ -67,7 +67,8 @@ public:
 	void get_folders(ustring);
 	void get_playlists();
 	void search_for(ustring, int);
-	void set_listfont(ustring font);			
+	void set_listfont(ustring font);
+	void set_plistPath(ustring plpath);
 protected:
 
 private:

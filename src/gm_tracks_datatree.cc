@@ -140,6 +140,8 @@ void gm_Datatree::on_dtdrag_data_get(
         const Glib::RefPtr<Gdk::DragContext>&,
         Gtk::SelectionData& selection_data, guint, guint)
 {
+	if (dt_mpdCom == NULL)
+		return;
 	// no real data are dragged: only a message: 'FromDTree'
   	selection_data.set(selection_data.get_target(), 8 /* 8 bits format */,
           (const guchar*)"FromDTree", 9 /* length of FromDTree in bytes */);		
@@ -300,6 +302,9 @@ void gm_Datatree::on_dtdrag_data_get(
 */
 void gm_Datatree::get_dir_items(ustring dirpath)
 {
+	if (dt_mpdCom == NULL)
+		return;
+	
 	gm_itemList itemlist = dt_mpdCom->get_folderlist(dirpath);
 	std::list<listItem>::iterator iter;
 	for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
@@ -528,9 +533,12 @@ void gm_Datatree::get_artists()
 void gm_Datatree::set_mpdcom(tracks_mpdCom *com)
 {
     dt_mpdCom = com;
-	
-    if (dt_mpdCom != NULL)
-        plistPath = dt_mpdCom->get_playlistPath();
+}
+
+
+void gm_Datatree::set_plistPath(ustring plpath)
+{
+	plistPath = plpath;
 }
 
 

@@ -31,7 +31,6 @@ gm_Playlist::gm_Playlist()
 	current_songNum = -1;
 	current_songID = -1;
 	pl_mpdCom = NULL;
-	plistPath = "";
 	plistLength = 0;
 	// get the grafix
     pxb_tr_track = Gdk::Pixbuf::create_from_inline(-1, tr_track, false);
@@ -732,9 +731,6 @@ void gm_Playlist::on_songchange(int songID, int status)
 void gm_Playlist::set_mpdcom(tracks_mpdCom *com)
 {
 	pl_mpdCom = com;
-	
-	if (pl_mpdCom != NULL)
-		plistPath = pl_mpdCom->get_playlistPath();
 }
 
 

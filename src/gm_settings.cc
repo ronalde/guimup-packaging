@@ -45,6 +45,8 @@ gm_settings::gm_settings()
              &gm_settings::on_button_connect) );
 	cli_bt_reset.signal_clicked().connect(sigc::mem_fun(*this,
              &gm_settings::on_fonts_reset) );
+	cli_bt_apply.signal_clicked().connect(sigc::mem_fun(*this,
+             &gm_settings::on_fonts_apply) );
 	// widgets
 	mainVBox.set_spacing(6);	
 	theButtonBox.set_layout(Gtk::BUTTONBOX_END);
@@ -60,15 +62,15 @@ gm_settings::gm_settings()
 		cnt_cb_autocon.set_label(" Autoconnect");
 	cnt_cb_override.set_label(" Override MPD's config with:");
 		cnt_hb_host.set_spacing(12);
-		cnt_et_host.set_size_request(120, -1);
+		cnt_et_host.set_size_request(150, -1);
 	    cnt_lb_host.set_text("Host");
 		cnt_lb_host.set_alignment(0, 0.5);
 		cnt_hb_port.set_spacing(12);
-		cnt_et_port.set_size_request(120, -1);
+		cnt_et_port.set_size_request(150, -1);
 	    cnt_lb_port.set_text("Port");
 		cnt_lb_port.set_alignment(0, 0.5);
 		cnt_hb_pswd.set_spacing(12);
-		cnt_et_pswd.set_size_request(120, -1);
+		cnt_et_pswd.set_size_request(150, -1);
 	    cnt_lb_pswd.set_text("Password");
 		cnt_lb_pswd.set_alignment(0, 0.5);
 		cnt_btcbox.set_border_width(0);
@@ -85,6 +87,14 @@ gm_settings::gm_settings()
 		srv_fr_output.set_label("Output devices");
 		srv_frout_vbox.set_border_width(4);
 		srv_frout_vbox.set_spacing(4);
+		srv_hb_mpath.set_spacing(12);
+		srv_et_mpath.set_size_request(150, -1);
+	    srv_lb_mpath.set_text("Music path");
+		srv_lb_mpath.set_alignment(0, 0.5);
+		srv_hb_ppath.set_spacing(12);
+		srv_et_ppath.set_size_request(150, -1);
+	    srv_lb_ppath.set_text("Playlist path");
+		srv_lb_ppath.set_alignment(0, 0.5);
 		srv_fr_manage.set_label("Manage MPD");
 		srv_frmng_vbox.set_border_width(4);
 		srv_frmng_vbox.set_spacing(4);
@@ -95,8 +105,11 @@ gm_settings::gm_settings()
 	cli_fr_fonts.set_label("Font sizes");
 	cli_framevbox.set_border_width(4);
 	cli_framevbox.set_spacing(4);
+	cli_hbx_fontbtns.set_spacing(6);
 	cli_bt_reset.set_label("Reset all");
-	cli_bt_reset.set_size_request(80, -1);
+	cli_bt_reset.set_size_request(120, -1);
+	cli_bt_apply.set_label("Apply");
+	cli_bt_apply.set_size_request(120, -1);
 	cli_spb_title.set_digits(0);
 	cli_spb_title.set_range(8, 16);
 	cli_spb_title.set_increments(1, 1);
@@ -122,7 +135,11 @@ gm_settings::gm_settings()
 	cli_spb_tracks.set_increments(1, 1);
 	cli_lb_tracks.set_text("Data tree & playlist");
 	cli_lb_tracks.set_alignment(0, 0.5);
-	cli_cb_systray.set_label(" Use system tray [restart to apply]");
+	cli_fr_restart.set_label("Restart to apply");
+	cli_vb_restart.set_border_width(4);
+	cli_vb_restart.set_spacing(4);
+	cli_cb_systray.set_label(" Use system tray");
+	cli_cb_ttips.set_label(" Show tooltips");
 	cli_et_art.set_size_request(120, -1);
 	cli_lb_art.set_text("Custom album art");
 	vbx_about.set_border_width(6);
@@ -131,7 +148,7 @@ gm_settings::gm_settings()
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
 		abt_label.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
-		abt_label.set_markup("<b>Guimup 0.1.1</b>");
+		abt_label.set_markup("<b>Guimup 0.1.2</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS);
 		ustring s_about;
@@ -185,6 +202,14 @@ gm_settings::gm_settings()
 			srv_frout_vbox.pack_start(srv_cb_out3,false, false, 0);
 			srv_frout_vbox.pack_start(srv_cb_out4,false, false, 0);
 			srv_frout_vbox.pack_end(srv_cb_out5,false, false, 0);
+	
+	vbx_server.pack_start(srv_hb_mpath,false, false, 0);
+		srv_hb_mpath.pack_start(srv_et_mpath,false, false, 0);
+		srv_hb_mpath.pack_end(srv_lb_mpath,true, true, 0);
+	vbx_server.pack_start(srv_hb_ppath,false, false, 0);
+		srv_hb_ppath.pack_start(srv_et_ppath,false, false, 0);
+		srv_hb_ppath.pack_end(srv_lb_ppath,true, true, 0);
+
 	vbx_server.pack_end(srv_fr_manage, false, false, 2);
 		srv_fr_manage.add(srv_frmng_vbox);
 			srv_frmng_vbox.pack_start(srv_cb_launch,false, false, 0);
@@ -195,7 +220,6 @@ gm_settings::gm_settings()
 			cli_framevbox.pack_start(cli_hbx_title, false, false, 0);
 				cli_hbx_title.pack_start(cli_spb_title, false, false, 0);
 				cli_hbx_title.pack_start(cli_lb_title, true, true, 8);
-				cli_hbx_title.pack_end(cli_bt_reset, true, true, 4);
 			cli_framevbox.pack_start(cli_hbx_trackinfo, false, false, 0);
 				cli_hbx_trackinfo.pack_start(cli_spb_trackinfo, false, false, 0);
 				cli_hbx_trackinfo.pack_start(cli_lb_trackinfo, true, true, 8);
@@ -207,8 +231,14 @@ gm_settings::gm_settings()
 				cli_hbx_album.pack_start(cli_lb_album, true, true, 8);
 			cli_framevbox.pack_start(cli_hbx_tracks, false, false, 0);
 				cli_hbx_tracks.pack_start(cli_spb_tracks, false, false, 0);
-				cli_hbx_tracks.pack_start(cli_lb_tracks, true, true, 8);
-	vbx_client.pack_start(cli_cb_systray, true, false, 0);
+				cli_hbx_tracks.pack_start(cli_lb_tracks, false, false, 8);
+			cli_framevbox.pack_start(cli_hbx_fontbtns, false, false, 0);
+				cli_hbx_fontbtns.pack_start(cli_bt_reset, false, false, 8);
+				cli_hbx_fontbtns.pack_end(cli_bt_apply, false, false, 8);
+	vbx_client.pack_start(cli_fr_restart, true, false, 0);
+		cli_fr_restart.add(cli_vb_restart);
+			cli_vb_restart.pack_start(cli_cb_systray, false, false, 0);
+			cli_vb_restart.pack_start(cli_cb_ttips, true, false, 0);
 	vbx_client.pack_end(cli_hb_art, false, false, 0);
 		cli_hb_art.pack_start(cli_et_art, false, false, 0);
 		cli_hb_art.pack_start(cli_lb_art, false, false, 6);
@@ -227,6 +257,15 @@ void gm_settings::on_button_cancel()
 	this->hide();
 }
 
+void gm_settings::on_fonts_apply()
+{
+	st_config->set_int("Scroller_Fontsize", cli_spb_title.get_value());
+	st_config->set_int("TrackInfo_Fontsize", cli_spb_trackinfo.get_value());
+	st_config->set_int("Time_Fontsize", cli_spb_time.get_value());
+	st_config->set_int("Album_Fontsize", cli_spb_album.get_value());
+	st_config->set_int("Tracks_Fontsize", cli_spb_tracks.get_value());
+	signal_applyfonts.emit();
+}
 
 void gm_settings::on_button_save()
 {
@@ -241,6 +280,7 @@ void gm_settings::on_button_save()
 	st_config->set_string("MPD_Host", cnt_et_host.get_text());
 	st_config->set_string("MPD_Port", cnt_et_port.get_text());
 	st_config->set_string("MPD_Password", cnt_et_pswd.get_text());
+	
 	// server
 	outdev_list oDevices;
     mpd_OutputEntity addDev;
@@ -281,6 +321,9 @@ void gm_settings::on_button_save()
     }
 	if (st_mpdCom != NULL)
 		st_mpdCom->setOutputs(oDevices);
+	
+	st_config->set_string("MPD_MusicPath", srv_et_mpath.get_text());
+	st_config->set_string("MPD_PlaylistPath", srv_et_ppath.get_text());
 
 	st_config->set_bool("QuitMPD_onQuit", srv_cb_kill.get_active());
 	st_config->set_bool("StartMPD_onStart", srv_cb_launch.get_active());
@@ -289,7 +332,8 @@ void gm_settings::on_button_save()
 	st_config->set_int("TrackInfo_Fontsize", cli_spb_trackinfo.get_value());
 	st_config->set_int("Time_Fontsize", cli_spb_time.get_value());
 	st_config->set_int("Album_Fontsize", cli_spb_album.get_value());
-	st_config->set_int("Tracks_Fontsize", cli_spb_tracks.get_value());	
+	st_config->set_int("Tracks_Fontsize", cli_spb_tracks.get_value());
+	st_config->set_bool("show_ToolTips", cli_cb_ttips.get_active());
 	st_config->set_bool("use_TrayIcon", cli_cb_systray.get_active());
 	st_config->set_string("AlbumArt_File", cli_et_art.get_text());
 	// hide the window
@@ -428,6 +472,9 @@ void gm_settings::load_and_show()
     	srv_cb_out5.set_sensitive(false);
     }
 	
+	srv_et_mpath.set_text(st_config->get_string("MPD_MusicPath"));
+	srv_et_ppath.set_text(st_config->get_string("MPD_PlaylistPath"));
+	
 	srv_cb_kill.set_active(st_config->get_bool("QuitMPD_onQuit"));
 	srv_cb_launch.set_active(st_config->get_bool("StartMPD_onStart"));
 	// get client settings
@@ -437,6 +484,7 @@ void gm_settings::load_and_show()
 	cli_spb_album.set_value(st_config->get_int("Album_Fontsize"));
 	cli_spb_tracks.set_value(st_config->get_int("Tracks_Fontsize"));
 	cli_cb_systray.set_active(st_config->get_bool("use_TrayIcon"));
+	cli_cb_ttips.set_active(st_config->get_bool("show_ToolTips"));
 	cli_et_art.set_text(st_config->get_string("AlbumArt_File"));
 	// show the window			 
 	this->show();

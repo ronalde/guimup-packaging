@@ -40,6 +40,8 @@ gm_Config::gm_Config()
 	set_string("MPD_Host",				"localhost");
 	set_int("MPD_Port",					6600);
 	set_string("MPD_Password",			"");
+	set_string("MPD_MusicPath",			"");
+	set_string("MPD_PlaylistPath",		"");
 	// 'player' related default values
 	set_string("AlbumArt_File",			"unameit");
 	set_int("Scroller_Delay",			60);

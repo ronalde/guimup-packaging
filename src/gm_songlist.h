@@ -22,6 +22,7 @@
 #ifndef GM_SONGINFO_H
 #define GM_SONGINFO_H
 
+#include <stdlib.h>
 #include <list>
 #include <glibmm/ustring.h>
     using Glib::ustring;

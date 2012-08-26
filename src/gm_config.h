@@ -22,6 +22,7 @@
 #ifndef GM_CONFIG_H
 #define GM_CONFIG_H
 
+#include <stdlib.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
 #include <iostream>

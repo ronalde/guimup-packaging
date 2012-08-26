@@ -22,6 +22,7 @@
 #ifndef GM_SETTINGS_H
 #define GM_SETTINGS_H
 
+#include <stdlib.h>
 #include <gtkmm/main.h>
 #include <gtkmm/window.h>
 #include <gtkmm/box.h>
@@ -63,6 +64,7 @@ public:
 //  signals
     sigc::signal<void, ustring, int, ustring, bool> signal_pleaseconnect;
     sigc::signal<void> signal_settingssaved;
+	sigc::signal<void> signal_applyfonts;
 protected:
 
 private:
@@ -71,6 +73,7 @@ private:
     void on_button_save();
     void on_button_connect();
     void on_fonts_reset();
+	void on_fonts_apply();
     std::string into_string(int in);
 
 //  widgets:
@@ -104,6 +107,12 @@ private:
                     Gtk::CheckButton srv_cb_out3;
                     Gtk::CheckButton srv_cb_out4;
                     Gtk::CheckButton srv_cb_out5;
+		    Gtk::HBox srv_hb_mpath;
+                Gtk::Entry srv_et_mpath;
+                Gtk::Label srv_lb_mpath;
+            Gtk::HBox srv_hb_ppath;
+                Gtk::Entry srv_et_ppath;
+                Gtk::Label srv_lb_ppath;
             Gtk::Frame srv_fr_manage;
                 Gtk::VBox srv_frmng_vbox;
                     Gtk::CheckButton srv_cb_launch;
@@ -115,7 +124,6 @@ private:
                         Gtk::HBox cli_hbx_title;
                             Gtk::SpinButton cli_spb_title;
                             Gtk::Label cli_lb_title;
-                            Gtk::Button cli_bt_reset;
                         Gtk::HBox cli_hbx_trackinfo;
                             Gtk::SpinButton cli_spb_trackinfo;
                             Gtk::Label cli_lb_trackinfo;
@@ -128,7 +136,13 @@ private:
                         Gtk::HBox cli_hbx_tracks;
                             Gtk::SpinButton cli_spb_tracks;
                             Gtk::Label cli_lb_tracks;
-            Gtk::CheckButton cli_cb_systray;
+						Gtk::HBox cli_hbx_fontbtns;
+							Gtk::Button cli_bt_reset;
+							Gtk::Button cli_bt_apply;
+			Gtk::Frame cli_fr_restart;
+				Gtk::VBox cli_vb_restart;
+            		Gtk::CheckButton cli_cb_systray;
+            		Gtk::CheckButton cli_cb_ttips;
             Gtk::HBox cli_hb_art;
                         Gtk::Entry cli_et_art;
                         Gtk::Label cli_lb_art;

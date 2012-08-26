@@ -236,6 +236,7 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
 		current_songID = -1;
 		current_songNum = -1;
 		current_status = -1;
+		mpd_finishCommand(conn);
         mpd_closeConnection(conn);
         conn = NULL;
 	}
@@ -271,31 +272,36 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
 
     // Connect (host, port, connection timeout (sec))
     conn = mpd_newConnection(serverName.data(), serverPort ,2);
-
+	mpd_finishCommand(conn);
     // If connection failed try 4 more tmes at 0.25 sec intervals
     // (in case mpd is starting up)
     int count = 1;
-    while (conn->error && count < 5)
+    while ((conn->error || conn == NULL) && count < 5)
     {
 		mpd_clearError(conn);
+		mpd_finishCommand(conn);
         if (conn != NULL)
         {
             mpd_closeConnection(conn);
             conn = NULL;
         }
-        // wait 250 msec
-        usleep(250000);
+        // wait 200 msec
+        usleep(200000);
 		// try again
         conn = mpd_newConnection(serverName.data(), serverPort, 2);
+		mpd_finishCommand(conn);
         count++;
     }
-    if (conn->error) // Still no luck
+	
+    if (conn->error || conn == NULL) // Still no luck
     {
 		cout << "Error: " << conn->errorStr << endl;
 		cout << "Is MPD running?" << endl;
-		mpd_clearError(conn);
+
         if (conn != NULL)
         {
+			mpd_clearError(conn);
+			mpd_finishCommand(conn);
             mpd_closeConnection(conn);
             conn = NULL;
         }
@@ -311,6 +317,8 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
     if (conn->error) // Password required?
     {
         mpd_clearError(conn);
+		mpd_finishCommand(conn);
+		
         if (!serverPassword.empty())
         {
             mpd_sendPasswordCommand(conn, serverPassword.data());
@@ -319,6 +327,7 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
             {
 				cout << "Error: " << conn->errorStr << endl;
                 mpd_clearError(conn);
+				mpd_finishCommand(conn);
                 mpd_closeConnection(conn);
                 conn = NULL;
                 b_connecting = false;
@@ -366,7 +375,10 @@ bool gm_mpdCom::mpd_reconnect()
     if (conn->error || conn == NULL)
     {
 		if (conn->error)
+		{
 			mpd_clearError(conn);
+			mpd_finishCommand(conn);
+		}
 
 		if (conn != NULL)
 		{
@@ -377,7 +389,7 @@ bool gm_mpdCom::mpd_reconnect()
 		b_connecting = false;
 		return true;
     }
-
+	
     // login if there is a password
     if (!serverPassword.empty())
     {
@@ -385,16 +397,18 @@ bool gm_mpdCom::mpd_reconnect()
 		if (conn->error)
 		{
 			cout << "Error: " << conn->errorStr << endl;
-			// set_status(-1, "MPD: password refused");
 			mpd_clearError(conn);
+			mpd_finishCommand(conn);
 			mpd_closeConnection(conn);
 			conn = NULL;
 			b_connecting = false;
 			return false;
 		}
+		mpd_finishCommand(conn);
 	}
 	
 	// connected!
+	cout << "Reconnected" << endl;
 	reconnectLoop.disconnect();
 	b_connecting = false;
 	current_playlist = -1;
@@ -528,6 +542,7 @@ bool gm_mpdCom::errorCheck(ustring action)
             cout << "Non fatal error on \"" << action << "\": " << conn->errorStr << endl;
 			cout << "Continue..." << endl;
             mpd_clearError(conn);
+			mpd_finishCommand(conn);
             return true;
         }
 
@@ -538,6 +553,7 @@ bool gm_mpdCom::errorCheck(ustring action)
 		cout << "Reconnecting..." << endl;
 		signal_status.emit(-1, "Error. Reconnecting...");;
         mpd_clearError(conn);
+		mpd_finishCommand(conn);
         mpd_closeConnection(conn);
         conn = NULL;
 		mpd_reconnect();

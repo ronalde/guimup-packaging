@@ -29,6 +29,11 @@ gm_Tracks::gm_Tracks()
     init_vars();
 }
 
+void gm_Tracks::set_plistPath(ustring plpath)
+{
+	theDatatree.set_plistPath(plpath);
+}
+
 // called by player when connected
 void gm_Tracks::connect_server(ustring host, int port, ustring pwd)
 {
@@ -311,6 +316,8 @@ void gm_Tracks::on_signal(int sigID)
 		case ID_sav: // save button
 		{
 			thePlaylist.save_list();
+			if (dataModeID == ID_plist)
+				theDatatree.get_playlists();
 			break;
 		}
 		

@@ -22,6 +22,7 @@
 #ifndef GM_MPDCOM_H
 #define GM_MPDCOM_H
 
+#include <stdlib.h>
 #include <glibmm/main.h>
 #include <sigc++/sigc++.h>
 #include <glibmm/ustring.h>

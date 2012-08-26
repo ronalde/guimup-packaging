@@ -22,6 +22,7 @@
 #ifndef GM_LISTITEM_H
 #define GM_LISTITEM_H
 
+#include <stdlib.h>
 #include <list>
 #include <glibmm/ustring.h>
     using Glib::ustring;

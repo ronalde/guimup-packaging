@@ -102,8 +102,8 @@ void gm_Player::init_vars()
 	b_stream = false;
 	b_minmax_busy = false;
     bt_play.grab_focus();
-	mpd_music_path = mpdCom.get_musicPath();
-	current_art_path = "";
+	get_mpd_paths();
+		current_art_path = "";
 	custom_art_file = config.get_string("AlbumArt_File");
 	b_timeremain = config.get_bool("use_TimeRemaining");
 	int delay = config.get_int("Scroller_Delay");
@@ -113,6 +113,28 @@ void gm_Player::init_vars()
 	set_fonts();
 }
 
+void gm_Player::get_mpd_paths()
+{
+	mpd_music_path = config.get_string("MPD_MusicPath");
+	if (mpd_music_path.empty())
+	{
+		mpd_music_path = mpdCom.get_musicPath();
+		if (!mpd_music_path.empty() && mpd_music_path.rfind("/") != mpd_music_path.length()-1)
+			mpd_music_path += "/";
+		config.set_string("MPD_MusicPath", mpd_music_path);
+	}
+	
+	mpd_plist_path = config.get_string("MPD_PlaylistPath");
+	if (mpd_plist_path.empty())
+	{
+		mpd_plist_path = mpdCom.get_playlistPath();
+		if (!mpd_plist_path.empty() && mpd_plist_path.rfind("/") != mpd_plist_path.length()-1)
+			mpd_plist_path += "/";
+		config.set_string("MPD_PlaylistPath", mpd_plist_path);
+	}
+	
+	tracksWindow.set_plistPath(mpd_plist_path);	
+}
 
 void gm_Player::set_fonts()
 {
@@ -694,6 +716,7 @@ void gm_Player::init_signals()
 	
 	settingsWindow.signal_pleaseconnect.connect(sigc::mem_fun(*this, &gm_Player::on_connectrequest) );
 	settingsWindow.signal_settingssaved.connect(sigc::mem_fun(*this, &gm_Player::on_settingssaved) );
+	settingsWindow.signal_applyfonts.connect(sigc::mem_fun(*this, &gm_Player::set_fonts) );
 
 	// return bool
 	eb_time.signal_button_press_event().connect(sigc::mem_fun(*this, &gm_Player::on_timeClicked) );
@@ -737,6 +760,7 @@ void gm_Player::on_settingssaved()
 {
 	custom_art_file = config.get_string("AlbumArt_File");
 	set_fonts();
+	get_mpd_paths();
 }
 
 void gm_Player::on_newStatus( statInfo sInfo )
@@ -1070,10 +1094,6 @@ void gm_Player::tIcon_create()
     // Setting up the UIManager:
     tIcon_ActionGroup = Gtk::ActionGroup::create();
 	
-    //tIcon_ActionGroup->add(
-    //Gtk::Action::create("Tracks", Gtk::Stock::INDEX),
-    //sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_plst) );
-
     tIcon_ActionGroup->add(
     Gtk::Action::create("Prev", Gtk::Stock::MEDIA_PREVIOUS),
     sigc::bind(sigc::mem_fun(*this, &gm_Player::on_signal), (int)ID_prev) );

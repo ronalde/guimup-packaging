@@ -30,6 +30,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
 	using Glib::ustring;
+#include <stdlib.h>
 
 class gm_tagInfo : public Gtk::Window
 {

@@ -43,6 +43,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <stdlib.h>
 #include <iostream>
     using std::cout;
     using std::endl;
@@ -125,6 +126,7 @@ private:
     sigc::connection minmaxtimer;
     ustring
         mpd_music_path,
+		mpd_plist_path,
         current_art_path,
         custom_art_file,
 		serverName,
@@ -206,6 +208,7 @@ private:
     void on_signal(int);
 	void on_signal_host_port_pwd(ustring, int, ustring);
     void set_fonts();
+	void get_mpd_paths();
     bool maxiMice();
     bool miniMice();
     ustring escapeString(ustring str);

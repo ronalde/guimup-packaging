@@ -152,10 +152,12 @@ bool tracks_mpdCom::mpd_connect(ustring host, int port, ustring pwd)
 
     // Connect (host, port, connection timeout (sec))
     conn = mpd_newConnection(serverName.data(), serverPort ,2);
-
+	mpd_finishCommand(conn);
+	
     if (conn->error || conn == NULL)
     {
         mpd_clearError(conn);
+		mpd_finishCommand(conn);
         if (conn != NULL)
         {
             mpd_closeConnection(conn);
@@ -171,6 +173,7 @@ bool tracks_mpdCom::mpd_connect(ustring host, int port, ustring pwd)
     if (conn->error) // Password required?
     {
         mpd_clearError(conn);
+		mpd_finishCommand(conn);
         if (!serverPassword.empty())
         {
             mpd_sendPasswordCommand(conn, serverPassword.data());
@@ -178,6 +181,7 @@ bool tracks_mpdCom::mpd_connect(ustring host, int port, ustring pwd)
             if (conn->error) // password refused
             {
                 mpd_clearError(conn);
+				mpd_finishCommand(conn);
                 mpd_closeConnection(conn);
                 conn = NULL;
                 b_connecting = false;
@@ -219,7 +223,10 @@ bool tracks_mpdCom::mpd_reconnect()
     if (conn->error || conn == NULL)
     {
         if (conn->error)
+		{
             mpd_clearError(conn);
+			mpd_finishCommand(conn);
+		}
 
         if (conn != NULL)
         {
@@ -237,11 +244,13 @@ bool tracks_mpdCom::mpd_reconnect()
         if (conn->error)
         {
             mpd_clearError(conn);
+			mpd_finishCommand(conn);
             mpd_closeConnection(conn);
             conn = NULL;
             b_connecting = false;
             return false;
         }
+		mpd_finishCommand(conn);
     }
 
     // connected!
@@ -281,6 +290,12 @@ void tracks_mpdCom::clear_list()
 
 void tracks_mpdCom::mpd_disconnect()
 {
+	statusLoop.disconnect();
+    if (conn != NULL)
+	{
+    	mpd_closeConnection(conn);
+    	conn = NULL;
+	}
     signal_connected.emit(false);
     // set empty playlist
     gm_songList newPlayList;
@@ -291,13 +306,6 @@ void tracks_mpdCom::mpd_disconnect()
     current_playlist = -1;
     current_songNum = -1;
     plistlength = 0;
-    // already disconnected
-    if (conn == NULL)
-        return;
-    // else disconnect
-    statusLoop.disconnect();
-    mpd_closeConnection(conn);
-    conn = NULL;
 }
 
 
@@ -306,7 +314,6 @@ bool tracks_mpdCom::errorCheck(ustring action)
     if (conn == NULL)
     {
         statusLoop.disconnect();
-        signal_connected.emit(false);
         mpd_reconnect();
         // still no luck: try to reconnect every 4 seconds
         if (conn == NULL);
@@ -332,12 +339,14 @@ bool tracks_mpdCom::errorCheck(ustring action)
         {
             //cout << "Playlist: non fatal error on \"" << action << "\"" << endl;
             mpd_clearError(conn);
+			mpd_finishCommand(conn);
             return true;
         }
 
         // A fatal error occurred: disconnnect & reconnect
         //cout << "Playlist disconnected" << action << "\"" << endl;
         mpd_clearError(conn);
+		mpd_finishCommand(conn);
         mpd_disconnect();
         mpd_reconnect();
         // still no luck: reconnect every 4 seconds
@@ -1067,7 +1076,7 @@ gm_itemList tracks_mpdCom::get_songlist(ustring album, ustring artist)
 
     if (conn == NULL)
         return itemlist;
-
+	
     if (album == "???")
     {
         if (artist.empty())
@@ -1120,10 +1129,16 @@ gm_itemList tracks_mpdCom::get_songlist(ustring album, ustring artist)
             if(ntity->type == MPD_INFO_ENTITY_TYPE_SONG)
             {
                 mpd_Song *newSong = mpd_songDup (ntity->info.song);
+				
+				ustring thisartist; 
+				if (newSong->artist == NULL)
+					thisartist = "???";
+				else
+					thisartist = newSong->artist;
+				
                 // different artists can have albums with the same name.
-                if (!artist.empty() && newSong->artist != NULL)
+                if (!artist.empty())
                 {
-                    ustring thisartist = newSong->artist;
                     if (thisartist != artist)
                     {
                         mpd_freeSong(newSong);
@@ -1134,7 +1149,7 @@ gm_itemList tracks_mpdCom::get_songlist(ustring album, ustring artist)
 
                 listItem newItem;
                 newItem.type = TP_SONG;
-                newItem.artist = newSong->artist;
+                newItem.artist = thisartist;
                 newItem.album = album;
                 newItem.title = "";
                 if (newSong->title != NULL)
