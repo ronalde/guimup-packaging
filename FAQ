@@ -1,0 +1,64 @@
+
+GUIMUP
+
+Frequently Asked Questions
+
+
+
+q. What is Guimup?
+a. Guimup is a mouse operated graphical user interface (GUI) for MPD, the [Mu]sic [P]layer Daemon (0.12.0 or above).
+
+
+q. What is MPD
+a. MPD is a daemon that runs in the background, plays your music and maintains a database of your music files. MPD does a great job, but can only be controlled through a client: MPD is as useless without the client as the client is without MPD.
+More information about mpd can be found at www.musicpd.org
+
+
+q. Will this program work with KDE, GNOME or XFCE?
+a. Yes. Since it basically is a Gtk program it will fit GNOME (and XFCE) like a glove. It does, however, not depend on GNOME or integrate with it in any way - so KDE should have no problems with it. But KDE users may prefer Quimup, the QT based version.
+
+
+q. I ran 'make install' and still can't find Guimup in my menu.
+a. Correct. You'll have to add it yourself (Use 'Alacarte' with Gnome).
+
+
+q. Guimup can't find... (my music/album art/playlists).
+a. Make sure ~/.mpdconf (or /etc/mpd.conf) is set up correctly: that is where guimup gets the paths from. And make sure MPD and Guimup are using the SAME MPD config file! When using /etc/mpd.conf make sure you have reading rights.
+
+
+q. Comment tags in mp3's are not displayed.
+a. That's a bug in MPD. Ogg-Vorbis is handled OK (and a better format anyway). If you don't mind compiling MPD yourself, a patch that will fix the problem can be downloaded from the online FAQ page.
+
+
+q. The volume slider does not work.
+a. To set the volume Guimup just calls MPD, which in turn calls ALSA (or OSS etc.). Please check there.
+
+
+q. How do I use audio streams?
+a. Support for audio streams is basic, but quite functional. Icecast: Save the stream (.m3u format) and put it in MPD's playlist dir. Shoutcast: Save the stream (.pls format). Remove EVERYTHING but the URLs from the file and save as .m3u in MPD's playlist dir.
+
+
+q. How does 'Purge' work?
+a. Purge removes all played items from the playlist. Note that the property 'played' is monitored by Guimup, not by MPD. If you restart Guimup, or when MPD signals to reload the playlist, all 'played' marks are lost.
+
+
+q. How come the 'played' marks keep disappearing?
+a. See above: the playlist is apparently reset by mpd.
+
+
+q. Where does the album art come from?
+a. From the directory where the audio file is located. It is recommended to put a 200x200 pixel bitmap named folder.jpg in every album directory. The program looks for a filename that matches *folder* *album* *cover* or *front* (in that order), and an extension that matches .jpg .png .gif or .bmp. An additional custom search-string can be added in the options window (Client tab). This string will be used first.
+
+
+q. The sound is terrible with 2 devices selected. Why?
+a. Mpd's output devices are virtual and defined in ~/.mpdconf (or /etc/mpd.conf). In turn they can refer to virtual alsa output devices, defined in .asoundrc. These virtual devices point to one or more real, hardware devices. The problems occur when a combination of mpd's output devices uses the same hardware device twice.
+
+
+q. How can I remove tracks from a playlist?
+a. Hitting 'Delete' will remove all selected tracks. No questions asked. The right mouse-button will bring up a menu that also includes 'delete'.
+
+
+q. Can I make a feauture request?
+a. Of course you can. You can contact me trough the email page at www.coonsden.com. But do keep in mind that Guimup is a no-bells-or-whistles music player: it is not a tag editor, ipod manager or sound converter.
+
+
