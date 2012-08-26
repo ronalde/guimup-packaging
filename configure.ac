@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl Created by Anjuta application wizard.
 
-AC_INIT(Guimup, 0.2.0, www.coonsden.com)
+AC_INIT(Guimup, 0.2.1, www.coonsden.com)
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
@@ -25,12 +25,9 @@ AM_GLIB_GNU_GETTEXT
 IT_PROG_INTLTOOL([0.35.0])
 
 
+LT_INIT
 
-AM_PROG_LIBTOOL
-
-
-
-PKG_CHECK_MODULES(GUIMUP, [gtkmm-2.4 >= 2.16 libsoup-2.4 >= 2.26])
+PKG_CHECK_MODULES(GUIMUP, [gtkmm-2.4 >= 2.16 libsoup-2.4 >= 2.26 gthread-2.0 >= 2.20])
 AC_SUBST(GUIMUP_CFLAGS)
 AC_SUBST(GUIMUP_LIBS)
 

@@ -3,6 +3,14 @@ Guimup Change Log
 version x.y.z
 x = superior   y = major   z = minor
 
+v. 0.2.1	2009 12 08
+
+  Fixed: Player window did not always show up at the right place.
+  Fixed: Playlist sometimes showed the wrong track as 'currently playing'.
+  Fixed: 'configure' now checks for the presence of gthread-2.0 (thanks Andreas).
+ Hacked: "window.present()" did not bring the window up (after a GTK update).
+Changed: Minor cosmetic tweaks.
+
 
 v. 0.2.0	2009 06 01
 
@@ -63,7 +71,6 @@ Changed: Program will also check for "/.mpd/mpd.conf" (allowed in mpd 0.15)
   Fixed: The program could crash when MPD was not running (or was killed).
   Fixed: Command line output: "No Song" is shown once only.
   Fixed: Command line output: "Reached max playlist size" is shown once only.
-
 
 
 v. 0.1.4     2009 02 17

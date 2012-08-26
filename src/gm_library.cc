@@ -210,7 +210,7 @@ void gm_library::init_widgets()
 		row[cbColums.col_id] = ID_genre;
 
 		row = *(comboTreeModel->append());
-		row[cbColums.col_name] = " All columms";
+		row[cbColums.col_name] = " All columns";
 		row[cbColums.col_id] = ID_all;
 
 		cb_selectmode.pack_start(cbColums.col_name, true);

@@ -87,8 +87,8 @@ gm_Player::gm_Player()
 
 	if (config.toggle_Library &&  b_useTrayIcon)
 	{
-		libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
 		libraryWindow.present();
+		libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
 		b_libraryWindow_hidden = false;
 	}	
 }
@@ -1075,8 +1075,8 @@ void gm_Player::on_signal(int sigID)
 			}
 			else
 			{
-				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
 				settingsWindow.load_and_show();
+				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
 				settingsWindow.present();
 			}
 			break;
@@ -1093,9 +1093,9 @@ void gm_Player::on_signal(int sigID)
 			}
 			else
 			{
-				libraryWindow.move(config.libraryWindow_Xpos, config.libraryWindow_Ypos);
-				libraryWindow.show();
+				//libraryWindow.show();
 				libraryWindow.present();
+				libraryWindow.move(config.libraryWindow_Xpos, config.libraryWindow_Ypos);
 			}
 			break;
 		}
@@ -1341,7 +1341,7 @@ bool gm_Player::on_tray_or_vol_Scrolled(GdkEventScroll* es)
 
 void gm_Player::tIcon_toggle_hide()
 {
-	if (config.toggle_Player)   /////// Player Rules ///////////////////////////
+	if (config.toggle_Player) /////////////////// [A] THE PLAYER RULES
 	{
 		// [1] Player is visible but minimized (or on another desktop): present
 		if (get_window() != NULL && get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
@@ -1349,20 +1349,18 @@ void gm_Player::tIcon_toggle_hide()
 			// first the library
 			if (libraryWindow.is_visible() && !config.toggle_Library)
 			{
-				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
-				libraryWindow.hide();
+				libraryWindow.get_window()->hide();
 				b_libraryWindow_hidden = true;
 			}
-			 else
+			else
 			if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
 			{
-				libraryWindow.present();;
+				libraryWindow.get_window()->hide(); // hack to fix 'present'
+				libraryWindow.present();
 			}
 			else
 			if (b_libraryWindow_hidden && config.toggle_Library)
 			{
-				libraryWindow.show();
-				libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
 				libraryWindow.present();
 				b_libraryWindow_hidden = false;
 			}
@@ -1370,27 +1368,27 @@ void gm_Player::tIcon_toggle_hide()
 			// settingswindow: always in sync with the player
 			if (settingsWindow.get_window() != NULL && settingsWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
 			{
+				settingsWindow.get_window()->hide(); // hack to fix 'present'
 				settingsWindow.present();
 			}
 			else
 			if (b_settingsWindow_hidden)
 			{
-				settingsWindow.show();
-				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);			
 				settingsWindow.present();
 				b_settingsWindow_hidden = false;
 			}
 			
 			// finally: the player on top
-			move(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
+			get_window()->hide(); // hack to fix 'present'
 			present();
 			
 			return;
 		}
 		
-		// [2] Player is visible, not minimized (and not another desktop): hide all
+		// [2] Player is visible, not minimized (and not on another desktop): hide all
 		if ( get_window()->is_visible() )
 		{
+			// player
 			get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
 			get_window()->hide();
 			b_playerWindow_hidden = true;
@@ -1398,61 +1396,57 @@ void gm_Player::tIcon_toggle_hide()
 			if (settingsWindow.is_visible())
 			{
 				settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
-				settingsWindow.hide();
+				settingsWindow.get_window()->hide();
 				b_settingsWindow_hidden = true;
 			}
 			// library
 			if (libraryWindow.is_visible())
 			{
 				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
-				libraryWindow.hide();
+				libraryWindow.get_window()->hide();
 				b_libraryWindow_hidden = true;
 			}
 			return;
 		}
 		
-		// [3] Player is hidden: show 	
+		// [3] Player is not visisble (hidden): show 	
 		if (b_playerWindow_hidden)
 		{
 			// first the library
 			if (libraryWindow.is_visible() && !config.toggle_Library)
 			{
 				libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
-				libraryWindow.hide();
+				libraryWindow.get_window()->hide();
 				b_libraryWindow_hidden = true;
 			}
 			else
 			if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED )
 			{
-					libraryWindow.present();
+				settingsWindow.get_window()->hide(); // hack to fix 'present'
+				libraryWindow.present();
 			}
 			else
 			if (b_libraryWindow_hidden && config.toggle_Library)
 			{
-				libraryWindow.show();
-				libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
 				libraryWindow.present();
 				b_libraryWindow_hidden = false;
 			}
 			
-			// settingswindow (cannnot be minimized here)
+			// settingswindow (can't be WINDOW_STATE_ICONIFIED here)
 			if (b_settingsWindow_hidden)
 			{
-				settingsWindow.show();
-				settingsWindow.move(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);			
 				settingsWindow.present();
 				b_settingsWindow_hidden = false;
 			}
 			// finally: the player on top
-			move(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
 			b_playerWindow_hidden = false;
 			present();
 			return;
 		}		
 	}
-	else	              /////////////////// Library Rules ////////////////////
+	else ///////////////////!! [B] THE LIBRARY RULES (when the player does not)
 	{
-		// config.toggle_Player == false: player and settings must be hidden
+		// config.toggle_Player is false. player and settings must be hidden
 		if ( get_window()->is_visible() )
 		{
 			get_position(config.PlayerWindow_Xpos, config.PlayerWindow_Ypos);
@@ -1462,28 +1456,30 @@ void gm_Player::tIcon_toggle_hide()
 			if (settingsWindow.is_visible())
 			{
 				settingsWindow.get_position(config.SettingsWindow_Xpos, config.SettingsWindow_Ypos);
-				settingsWindow.hide();
+				settingsWindow.get_window()->hide();
 				b_settingsWindow_hidden = true;
 			}
 		}
 		
-		// library (config.toggle_Library == true)
+		// library (config.toggle_Library is true)
 		if (libraryWindow.get_window() != NULL && libraryWindow.get_window()->get_state() == Gdk::WINDOW_STATE_ICONIFIED)
-				libraryWindow.present();
+		{
+			libraryWindow.get_window()->hide(); // hack to fix 'present'
+			libraryWindow.present();
+		}
 		else			
-		if ( libraryWindow.is_visible() )
+		if ( !b_libraryWindow_hidden )
 		{
 			libraryWindow.get_position(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
-			libraryWindow.hide();
+			libraryWindow.get_window()->hide();
 			b_libraryWindow_hidden = true;
 		}
-		else // show, even if !b_libraryWindow_hidden
+		else // show
 		{
-			libraryWindow.show();
-			libraryWindow.move(config.libraryWindow_Xpos,config.libraryWindow_Ypos);
-			libraryWindow.present();
+			libraryWindow.present();			
 			b_libraryWindow_hidden = false;
 		}
+
 	}
 }
 

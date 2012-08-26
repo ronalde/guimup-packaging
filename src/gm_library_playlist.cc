@@ -900,14 +900,14 @@ void gm_Playlist::set_playlist(gm_songList playlist)
 void gm_Playlist::on_songchange(int songID, int status)
 {
 
-//	cout << "current ID: " << current_songID << endl;
-//	cout << "new ID: " << songID << endl;	
+	//cout << "current ID: " << current_songID << endl;
+	//cout << "new ID: " << songID << endl;	
 	
 	if (songID != current_songID)
 	{
 		Tr_Ch children = plListStore->children();
 		// if no current song, set the focus on the first
-		if (songID <= 0)
+		if (songID < 0)
 		{
 			Tr_Ch::iterator first = children.begin();
 			if (first)
