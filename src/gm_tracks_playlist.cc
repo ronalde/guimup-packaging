@@ -777,7 +777,8 @@ void gm_Playlist::purge_list()
 		{
 			gm_cmdStruct newCommand;
 			newCommand.cmd = CMD_DEL;
-			newCommand.songnr = row[plColumns.col_nr] -1;
+			int songID = row[plColumns.col_id];
+			newCommand.songid = songID;
 			// highest nrs first: push_front!
 			newCommandList.push_front(newCommand);
 			// erase(iter) invalidates other iters: store rowrefs
@@ -799,7 +800,7 @@ void gm_Playlist::purge_list()
 	renumber_list();
 /*  We execute_cmds 'true', which will trigger set_playlist(),
 	where b_dragadded will make sure (only) set_DnDmode() is
-	executed. We could do that here, but this will also trigger
+	executed. We could do that here, but THIS will also trigger
 	updating the playlist statistics :)	*/
 	b_dragadded = true;
 	pl_mpdCom->execute_cmds( newCommandList, true );

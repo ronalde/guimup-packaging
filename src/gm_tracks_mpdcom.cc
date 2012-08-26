@@ -740,7 +740,7 @@ void tracks_mpdCom::execute_cmds(gm_commandList cmdlist, bool resetlist)
         {
 			case CMD_DPL:
 			{
-				cout << "deleting playlits: " << curCommand.file << endl;
+				cout << "deleting playlists: " << curCommand.file << endl;
 
 				mpd_sendRmCommand(conn, curCommand.file.data());
         		mpd_finishCommand(conn);

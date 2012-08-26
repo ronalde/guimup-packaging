@@ -3,6 +3,14 @@ Guimup Change Log
 version x.y.z
 x = major   y = minor   z = update
 
+
+v. 0.1.4     2009 02 17
+
+  Fixed: Purge did not work on the server side, only on the client side.
+Changed: Main MPD version is now shown as x.x (was the 'API' version x.x.x).
+Changed: Minor cosmetic features.
+
+
 v. 0.1.3     2009 02 04
 
   Fixed: Sorting problems since MPD 0.14 (Guimup handles the sorting now).

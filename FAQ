@@ -27,7 +27,7 @@ a. Make sure ~/.mpdconf (or /etc/mpd.conf) is set up correctly: that is where gu
 
 
 q. Comment tags in mp3's are not displayed.
-a. That's a bug in MPD. Ogg-Vorbis is handled OK (and a better format anyway). If you don't mind compiling MPD yourself, a patch that will fix the problem can be downloaded from the online FAQ page.
+a. That's a bug in MPD. Ogg-Vorbis is handled OK (and a better format anyway). (fixed in MPD 0.14.x)
 
 
 q. The volume slider does not work.

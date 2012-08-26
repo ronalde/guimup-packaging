@@ -773,9 +773,8 @@ ustring gm_mpdCom::get_version()
 	if (conn == NULL)
 		return version;
 	
-    version += into_string(conn->version[0]) + ".";
-    version += into_string(conn->version[1]) + ".";
-    version += into_string(conn->version[2]);
+    version += into_string(conn->version[0]) + "." + into_string(conn->version[1]);
+    // version += into_string(conn->version[2]); // this reports the API version, which differs from the main MPD version
 	return version;
 }
 

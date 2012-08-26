@@ -148,7 +148,7 @@ gm_settings::gm_settings()
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
 		abt_label.modify_fg(Gtk::STATE_NORMAL, Gdk::Color("#1E3C59"));
-		abt_label.set_markup("<b>Guimup 0.1.3</b>");
+		abt_label.set_markup("<b>Guimup 0.1.4</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS);
 		ustring s_about;
