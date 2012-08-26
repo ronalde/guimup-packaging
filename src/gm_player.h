@@ -71,6 +71,7 @@ public:
   virtual ~gm_Player();
 
 	void on_open_with_request(std::vector<ustring>, bool);
+	void activate_from_remote();
 	
 private:
 	gm_browser *browserWindow;

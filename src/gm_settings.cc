@@ -268,7 +268,7 @@ gm_settings::gm_settings()
 		stl_scl_sat = new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL);
 		stl_scl_sat->set_draw_value(false);
 		stl_scl_sat->set_range (0, 100);
-		stl_lb_val.set_markup("<small>Value</small>");
+		stl_lb_val.set_markup("<small>Contrast</small>");
 		stl_lb_val.set_alignment(0, 0.5);
 		stl_scl_val = new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL);
 		stl_scl_val->set_range (0, 100);
@@ -288,7 +288,7 @@ gm_settings::gm_settings()
 		abt_grid_main.set_row_spacing(6);
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
-		abt_label.set_markup("<b>Guimup 0.3.2</b>");
+		abt_label.set_markup("<b>Guimup 0.3.3</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_ALWAYS);
 		abt_scrollwin.set_shadow_type(Gtk::SHADOW_NONE);

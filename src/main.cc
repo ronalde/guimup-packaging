@@ -21,188 +21,89 @@
 
 #include <gtkmm/main.h>
 #include <glibmm/stringutils.h>
-#include <unique/unique.h>
-#include "gm_player.h"
+#include <gm_app.h>
 #include <iostream>
     using std::cout;
     using std::endl;
-
-gm_Player *the_player;
-
-
-/*  
-	Here we process the URIs passed to a next instance.
-
-	commands are used as follows:
- 	UNIQUE_ACTIVATE > only present player
-  	UNIQUE_NEW      > play URIs in new list (and present player)
-  	UNIQUE_OPEN     > append URis to list (and present player)
-*/
-static UniqueResponse on_message_received(UniqueApp* app, UniqueCommand cmd, UniqueMessageData* message)
-{
-	UniqueResponse resp = UNIQUE_RESPONSE_OK;
-	if (cmd == UNIQUE_NEW || cmd == UNIQUE_OPEN)
-	{	
-		std::vector<ustring> urilist;
-		gchar **msg_uris = unique_message_data_get_uris(message);
-		gchar *uri = NULL;
-		int i = 0;
-		if (cmd != UNIQUE_ACTIVATE && msg_uris != NULL)
-		{
-			uri = msg_uris[i];
-			while (uri != NULL)
-			{
-				if (uri && Glib::str_has_prefix(uri,"file:"))
-					urilist.push_back(uri);
-				i++;
-				uri = msg_uris[i];
-			}
-
-			bool b_newlist = false;
-			if(cmd == UNIQUE_NEW)
-				b_newlist = true;
-			
-			the_player->on_open_with_request(urilist, b_newlist);
-			
-			g_strfreev(msg_uris);
-		}
-		else
-			resp = UNIQUE_RESPONSE_FAIL;
-	}
-
-	the_player->present();
-	return resp;
-}
+#include <glibmm/ustring.h>
+    using Glib::ustring;
 
 
 int main(int argc, char *argv[])
 {
 	Gtk::Main kit(argc, argv);
 
-	UniqueCommand command = UNIQUE_ACTIVATE;
-	bool b_allow_multiple = false;
-	int uricount = 0;
-	gchar **uris;
-	
-	for (int a = 1; a < argc; ++a)
+	bool b_allow_instance = false;
+
+	if (argc > 1) // when no args are given argc == 1!
 	{
-		ustring msg = argv[a];
+		ustring msg = "";
+		if (argv[1] != NULL)
+			msg = argv[1];
 		
-		if ( msg == "-p" || msg == "-play")
-		{
-			command = UNIQUE_NEW;
-		}
-		if ( msg == "-a" || msg == "-append")
-		{
-			command = UNIQUE_OPEN;
-		}		
-		else		
-		if ( msg == "-i" || msg == "-instance")
-		{
-		    b_allow_multiple = true;
-		}
-		else
 		if (msg == "-h" || msg == "-help")
 		{
-			cout << "Guimup version 0.3.0" << endl;
+			cout << "Guimup version 0.3.3" << endl;
 			cout << "© 2012 Johan Spee <guimup@coonsden.com>" << endl; 
 			cout << "This program is licensed by the GPL and distributed in the hope that it will be useful, but without any warranty." << endl;
-		    cout << endl << "Command line parameters:" << endl;
-		    cout << " -h(elp)           show this information and exit" << endl;
-		    cout << " -i(nstance)       force a new instance" << endl;
-			cout << " -p(lay) %U        play files in list of uri" << endl;
-			cout << " -a(ppend) %U      append files in list of uri" << endl;
-			cout << "  %U               default: append files in list of uri" << endl << endl;;
-
-			return 0;
-		}
-		else
-		// URL
-		if (str_has_prefix(msg,"file:"))
-			uricount++;
-	}
-	
-	if (uricount > 0 && command == UNIQUE_ACTIVATE) // only uri, no -a or -p
-		command = UNIQUE_OPEN;
-	
-	if (uricount > 0)
-		uris = argv;
-
-	cout << "Guimup: starting up" << endl;
-	UniqueApp *app;
-  	app = unique_app_new  ("coonsden.guimup", NULL);
-	if (unique_app_is_running (app))
-	{
-		cout << "Previous instance detected" << endl;
-		if (!b_allow_multiple)
-		{
-      		UniqueResponse response = UNIQUE_RESPONSE_FAIL; 
-      		
-      		if (command == UNIQUE_ACTIVATE)
-			{
-        		response = unique_app_send_message (app, command, NULL);
-			}
-      		else
-        	{
-				if (uricount > 0)
-				{
-		      		UniqueMessageData *message = unique_message_data_new ();
-					unique_message_data_set_uris(message, argv);
-					response = unique_app_send_message (app, command, message);
-		      		unique_message_data_free (message);
-				}
-				else
-					response = unique_app_send_message (app, command, NULL);
-			}
-
-			g_object_unref (app);
-
-			if (response != UNIQUE_RESPONSE_OK)
-				cout << "Previous instance rejected parameter(s)." << endl;
-
-			cout << "Use '-i' parameter to allow a new instance" << endl;
-			cout << "Goodbye!" << endl;
-			return 0;
+			cout << endl << "Command line parameters:" << endl;
+			cout << " -h(elp)           show this help information - and exit" << endl;
+			cout << " -i(nstance)       run in multiple instance (non-unique) mode" << endl;
+			cout << " -p(lay) %U (%F)   play files in list of uri (or paths) in new playlist" << endl;
+			cout << " -a(ppend) %U (%F) append files in list of uri (or paths) to playlist" << endl;
+			cout << "  %U (%F)          default: play files in new playlist" << endl << endl;
 			
+			return 0;
 		}
-		else
-		    cout << "Allowing new instance." << endl;	
-	}
+	
 
-	the_player =  new gm_Player();	
-	g_signal_connect (app, "message-received", G_CALLBACK (on_message_received), NULL);
-
-
-/*  
-	Here we process the URIs passed to this instance.
-
-	commands are used as follows:
-  	UNIQUE_NEW      > play in new list,
-  	UNIQUE_OPEN     > append to list
-*/
-	if (uricount > 0 && uris != NULL)
-	{
-		std::vector<ustring> urilist;
-		gchar *uri = NULL;
-
-		int i = 0;
-		uri = uris[i];
-		while (i < argc)
+		for (int a = 1; a < argc; ++a)
 		{
-			if (uri && Glib::str_has_prefix(uri,"file:"))
-				urilist.push_back(uri);
-			i++;
-			uri = uris[i];
+			if (argv[a] != NULL)
+				msg = argv[a];
+			
+			if ( msg == "-i" || msg == "-instance")
+			{
+				b_allow_instance = true;
+				break;
+			}
 		}
-		
-		bool b_newlist = false;
-		if(command == UNIQUE_NEW)
-		b_newlist = true;
-		
-		the_player->on_open_with_request(urilist, b_newlist);
 	}
 	
-	Gtk::Main::run(*the_player);
-	g_object_unref (app);
-	return 0;
+	Glib::RefPtr<gm_application> app;
+	app =  Glib::RefPtr<gm_application>(new gm_application());	
+
+ 
+/* 		APPLICATION_NON_UNIQUE
+	   	* cmd args will not be passed on to first instance.
+		* app->is_remote() will return false.                  */
+	if (b_allow_instance)
+	{
+		app->set_flags(Gio::APPLICATION_NON_UNIQUE | Gio::APPLICATION_HANDLES_COMMAND_LINE);
+		cout << "Guimup: starting up in multiple instance (non-unique) mode" << endl;
+	}
+	else
+		cout << "Guimup: starting up in single instance (unique) mode" << endl;
+	
+	if (app->register_application())
+	{
+		// if this is the 1st instance create player window:
+		if (b_allow_instance || !app->is_remote())
+			app->create_window();
+		else
+		{
+			// current instance will exit since no window is created.
+			cout << "Guimup is already running: closing this instance" << endl;
+			// present 1st instance:
+			app->activate();
+		}
+	}
+	else
+	{
+		cout << "Error: Application registration failed" << endl;
+		return 0;
+	}
+
+	const int status = app->run(argc, argv);
+	return status;
 }

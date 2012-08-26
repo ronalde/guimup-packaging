@@ -30,6 +30,7 @@ gm_mpdCom::gm_mpdCom()
     b_statCheckBusy = false;
     b_dbaseUpdating = false;
     b_no_volume = false;
+	b_config_allowed = false;
     mpdconf_path = "";
     plist_lenght = 0;
     current_playlist = -1;
@@ -216,6 +217,7 @@ bool gm_mpdCom::mpd_connect()
     {
 		if (!is_mpd_running())
 		{
+			cout << "MPD is not yet running" << endl;
 			if (config->StartMPD_onStart)
 			{
 				cout << "Starting MPD (as configured)" << endl;
@@ -239,6 +241,8 @@ bool gm_mpdCom::mpd_connect()
 				return false;
 			}		
 		}
+		else
+			cout << "MPD appears to be running" << endl;
     }
     else
 	cout << "Assuming remote connection" << endl;
@@ -354,6 +358,9 @@ bool gm_mpdCom::mpd_connect()
     while ( (mp = mpd_recv_command_pair(conn)) != NULL)
     {
         command = (char*)mp->value;
+		
+		if (command.compare("config") == 0)
+			b_config_allowed = true;			// return path of music-dir
         if (command.compare("status") == 0) 
             b_status_allowed = true;			// statusCheck()
         if (command.compare("enableoutput") == 0)
@@ -619,7 +626,13 @@ ustring gm_mpdCom::get_string(ustring key)
 
 ustring gm_mpdCom::get_musicPath()
 {
-    ustring result = get_string("music_directory");
+	ustring result;
+	
+	// if (b_config_allowed)
+	// result = .....?
+	// else
+	
+    result = get_string("music_directory");
 	if (!result.empty())
 	{
 		if (result.rfind("/") != result.length()-1)

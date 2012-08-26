@@ -544,6 +544,11 @@ void gm_Player::set_colors()
 	lb_kbps.override_color(titleinfo_fg_color, Gtk::STATE_FLAG_NORMAL);
 	lb_khz.override_color(titleinfo_fg_color, Gtk::STATE_FLAG_NORMAL);
 	lb_time.override_color(titleinfo_fg_color, Gtk::STATE_FLAG_NORMAL);
+	// background should be transparent but is not in some (xfce) themes:
+	lb_type.override_background_color(titleinfo_bg_color, Gtk::STATE_FLAG_NORMAL);
+	lb_kbps.override_background_color(titleinfo_bg_color, Gtk::STATE_FLAG_NORMAL);
+	lb_khz.override_background_color(titleinfo_bg_color, Gtk::STATE_FLAG_NORMAL);
+	lb_time.override_background_color(titleinfo_bg_color, Gtk::STATE_FLAG_NORMAL);
 }
 
 
@@ -1180,12 +1185,34 @@ bool gm_Player::on_tray_or_vol_Scrolled(GdkEventScroll* es)
     return true; // stop here
 }
 
+// remote instance requests activation
+void gm_Player::activate_from_remote()
+{
+	if (b_playerWindow_hidden)
+	{
+		present();
+		b_playerWindow_hidden = false;
+		
+		if (b_show_settingsWindow)
+		{
+			settingsWindow->move(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
+			settingsWindow->present();
+		}
+		
+		if (b_show_browserWindow)
+		{
+			browserWindow->move(config->browserWindow_Xpos, config->browserWindow_Ypos);
+			browserWindow->present();
+		}
+	}
+}
+
 
 void gm_Player::toggle_hide_show()
 {
 	if (b_playerWindow_hidden)
 	{
-		// DEBUG move(config->playerWindow_Xpos, config->playerWindow_Ypos);
+		move(config->playerWindow_Xpos, config->playerWindow_Ypos);
 		present();
 		b_playerWindow_hidden = false;
 		
@@ -1246,6 +1273,7 @@ bool gm_Player::on_delete_event(GdkEventAny* event)
 		return false; // pass on
 	}
 }
+
 
 // window calls this on quit
 void gm_Player::on_hide()
@@ -1647,25 +1675,27 @@ void  gm_Player::on_open_with_request(std::vector<ustring> urilist, bool newlist
 
 	if (!config->mpd_socket_conn)
 	{
-		cout << "URIs ignored (no socket connection)" << endl;
+		cout << "File-list ignored (no socket connection)" << endl;
 		return;
 	}
 	
 	if (newlist)
 	{
-		cout << "Creating new playlist from URIs" << endl;
+		cout << "Creating new playlist from file-list" << endl;
 		mpdCom->clear_list();
 	}
 	else
-		cout << "Appending URIs to playlist" << endl;
+		cout << "Appending file-list to playlist" << endl;
 
 	int i = 0;
 	int last = urilist.size();
 	std::vector<ustring>::iterator url;
 	for(url = urilist.begin(); url != urilist.end(); ++url)
     {
-		/* filename_from_uri() replaces '%20' with ' ' 
-		   AND removes 'file://' */
+		/* 
+		   filename_from_uri() replaces '%20' with ' ' 
+		   AND removes 'file://' prefix !
+		*/
 		ustring newurl = Glib::filename_from_uri(*url);
 		newurl = "file://" + newurl;
 	    gm_cmdStruct newCommand;

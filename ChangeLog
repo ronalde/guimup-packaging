@@ -4,7 +4,21 @@ version x.y.z
 x = superior   y = major   z = minor
 
 
+v. 0.3.3   2012 08 03
+
+   * Does not depend on libunique anymore:
+       Implemented Gtk::application (and removed libunique).
+   * Improved xfce4 compatibility:
+       Besides URI (%U) cmd line now accepts /path/to/file (%F).
+       Fixed wrong bg-color for track-info labels in some themes.
+   * Fixes:
+       Finally fixed toggle show/hide player problems.
+       Removed deprecated g_thread_init() from code.
+
+
 v. 0.3.2   2012 05 12
+
+   bugfix release
 
    * fixed: Connection with remote MPD failed (tx Michael Thomsen).
    * fixed: Track nr in xx-yy format dit not have the -yy stripped.

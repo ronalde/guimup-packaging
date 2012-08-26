@@ -53,7 +53,9 @@ guimup_SOURCES = \
 	gm_libraryview_pix.h \
 	gm_settings.cc \
 	gm_settings.h \
-	gm_settings_pix.h
+	gm_settings_pix.h \
+	gm_app.cc \
+	gm_app.h
 
 guimup_LDFLAGS = 
 

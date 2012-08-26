@@ -25,7 +25,7 @@
 gm_browser::gm_browser()
 {
 	// for the soup:
-	g_thread_init (NULL);
+	// g_thread_init (NULL); deprecated
 	g_type_init ();
 	
 	thePlaylist = new gm_Playlist;

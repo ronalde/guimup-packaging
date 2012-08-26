@@ -165,7 +165,8 @@ class gm_mpdCom {
 		b_dbaseUpdating,
 		b_reload,
 		b_connecting,
-		b_no_volume;
+		b_no_volume,
+		b_config_allowed;
 	
 	int
 		current_playlist,
