@@ -1,35 +1,28 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl Created by Anjuta application wizard.
 
-AC_INIT(Guimup, 0.2.1, www.coonsden.com)
+AC_INIT(guimup, 0.3)
 
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
-AM_CONFIG_HEADER(config.h)
-AM_MAINTAINER_MODE
+AC_CONFIG_HEADERS([config.h])
 
-AC_ISC_POSIX
+AM_INIT_AUTOMAKE([1.11])
+
+AM_SILENT_RULES([yes])
+
 AC_PROG_CXX
-AM_PROG_CC_STDC
-AC_HEADER_STDC
 
 
 
 
-dnl ***************************************************************************
-dnl Internatinalization
-dnl ***************************************************************************
-GETTEXT_PACKAGE=guimup
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [GETTEXT package name])
-AM_GLIB_GNU_GETTEXT
-IT_PROG_INTLTOOL([0.35.0])
 
 
 LT_INIT
 
-PKG_CHECK_MODULES(GUIMUP, [gtkmm-2.4 >= 2.16 libsoup-2.4 >= 2.26 gthread-2.0 >= 2.20])
-AC_SUBST(GUIMUP_CFLAGS)
-AC_SUBST(GUIMUP_LIBS)
+
+
+PKG_CHECK_MODULES(GUIMUP, libsoup-2.4
+unique-3.0
+[gtkmm-3.0 libmpdclient])
 
 
 
@@ -37,5 +30,5 @@ AC_SUBST(GUIMUP_LIBS)
 AC_OUTPUT([
 Makefile
 src/Makefile
-po/Makefile.in
+
 ])

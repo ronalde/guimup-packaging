@@ -1,7 +1,7 @@
 /*
- *  gm_library_treeview.cc
+ *  gm_browser.treeview.cc
  *  GUIMUP treeview class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -28,9 +28,11 @@
 gm_treeview::gm_treeview()
 {
 	y_offset = 24;
-/*		
-	 24 is a resonable guess. set_mouse_offset(x), where x is the actual 
-	header heigth or 0 when the treeview has no header
+/*
+	Mouse y-value and Treeview y-value are not the same! The difference
+	is the treeview header: y_offset. 24 is a resonable guess. 
+	Use set_mouse_offset(x), where x is the actual	header heigth
+	or 0 when the treeview has no header
 */	 
 	b_dragged = false;
 	b_interfered = false;
@@ -45,14 +47,15 @@ gm_treeview::~gm_treeview()
 // Catch accelerator keys you want to handle yourself
 bool gm_treeview::on_key_press_event(GdkEventKey* event)
 {
-	if (event->keyval == GDK_space)
+	if (event->keyval == GDK_KEY_space)
 	{
 		signal_key_pressed.emit(event);
-		return false;
+	 	return false;
 	}
 	else
 		return Gtk::TreeView::on_key_press_event(event);
 }
+
 
 bool gm_treeview::on_button_release_event(GdkEventButton* event)
 {
@@ -122,12 +125,7 @@ bool gm_treeview::on_button_press_event(GdkEventButton* event)
 		}
 }
 
-/*  
-	Mouse y-value and Treeview y-value are not the same! The difference
-	is the treeview header. 
-	Use the default 24 pix, or, if you can get the exact heigth, set it here.
-	No header -> set it to 0.
-*/
+
 void gm_treeview::set_mouse_offset(int offset)
 {
 	y_offset = offset;

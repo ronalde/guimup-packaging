@@ -1,7 +1,7 @@
 /*
  *  gm_mpdcom.h
  *  GUIMUP mpd communicator class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -22,36 +22,41 @@
 #ifndef GM_MPDCOM_H
 #define GM_MPDCOM_H
 
-#include <stdlib.h>
+#include <gtkmm/main.h>
 #include <glibmm/main.h>
-#include <sigc++/sigc++.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <fstream>
 #include <iostream>
     using std::cout;
     using std::endl;
-#include <fstream>
-#include <sstream>
 #include <list>
-#include "libmpdclient.h"
-#include "gm_songlist.h"
-#include <sys/types.h>
+#include <mpd/client.h>
+#include <ctime>
+#include "gm_songinfo.h"
+#include "gm_config.h"
+#include "gm_itemlist.h"
+#include "gm_commandlist.h"
 
-typedef std::list<mpd_OutputEntity> outdev_list;
-
-struct statInfo
+typedef struct gm_mpd_version
 {
-    int mpd_status;
-    int mpd_time;
-    int mpd_totalTime;
-    int mpd_kHz;
-    int mpd_kbps;
-    int mpd_volume;
-    bool mpd_random;
-    bool mpd_repeat;
-    bool mpd_single;
-    bool mpd_consume;
-};
+	int primary;
+	int secundary;
+}
+gm_mpd_version;
+
+typedef struct gm_output
+{
+	int id;
+	bool enabled;
+	ustring name;
+}
+gm_output;
+
+typedef std::vector<gm_output> gm_outputList;
+
+typedef std::vector<int> gm_IDlist;
+
 
 
 class gm_mpdCom {
@@ -61,79 +66,113 @@ class gm_mpdCom {
     gm_mpdCom();
     virtual ~gm_mpdCom ();
 
-    virtual bool mpd_connect(ustring host = "",
-                                 int port = 0 ,
-                             ustring pswd = "",
-                                bool usem = false);
-    // mpd commands
-    void prev();
-    void stop();
-    void play(bool reload = false);
-    void pause();
-    void resume();
-    void next();
-    void set_volume(int);
+    bool mpd_connect();
+	void prev();
+	void stop();
+	void play(bool reload = false);
+	void pause();
+	void resume();
+	void next();
+	void play_this(int);
+	void set_random(bool);
+	void set_repeat(bool);
+	void set_single(bool);
+	void set_consume(bool);
+	int get_xfade();
+	int get_replaygain();
+	void set_replaygain(int);
+	void set_xfade(int);
+	void set_volume(int);
 	void volume_up(int);
 	void volume_down(int);
-    void set_seek(int);
-	void updatefile(ustring);
-    // mpd config
-    ustring get_musicPath();
-    ustring get_playlistPath();
-    ustring get_tagEncoding();
-    ustring get_user();
-    // other
-    ustring get_version();
-    outdev_list getOutputs();
-    void setOutputs(outdev_list oDevices);
-	void mpd_disconnect();
-//  variables
+	void set_seek(int);
+	void rescan_folder(ustring);
+	void update_all();
+	gm_mpd_version get_version();
+	gm_outputList get_outputs();
+	void set_outputs(gm_outputList);
+	gm_IDlist get_IDlist();
+	void set_config(gm_Config*);
+	void set_sInfo(gm_songInfo*);
+	void configure();
+	int get_listChanger();
+	void execute_cmds(gm_commandList, bool);
+	int execute_single_command(gm_cmdStruct, bool);
+	void clear_list();
+	void shuffle_list();
+	void get_statistics();
+	void get_playlist();
+	bool save_playlist(ustring);
+	bool save_selection(std::vector<ustring>, ustring);
+	ustring get_album_year(ustring, ustring);
+	gm_itemList get_albumlist(bool);
+	gm_itemList get_album_searchlist(ustring);
+	gm_itemList get_albums_for_artist(ustring);
+	gm_itemList get_artistlist();
+	gm_itemList get_artist_searchlist(ustring);
+	gm_itemList get_playlistlist();
+	gm_itemList get_folderlist(ustring);
+	gm_itemList get_songlist(ustring, ustring, ustring);
+	gm_itemList get_song_searchlist(ustring);
+	gm_itemList get_genrelist(ustring);
+	gm_itemList get_genre_artistlist(ustring findgenre);
+	gm_itemList get_playlist_itemlist(ustring);
+	gm_itemList get_yearlist();
+	void mpd_disconnect(bool sendsignal = true);
 
-//  signals
-    sigc::signal<void, int, ustring> signal_status;
-    sigc::signal<void, statInfo> signal_statusInfo;
-    sigc::signal<void, songInfo> signal_songInfo;
-    // Player must notify 'library' and 'settings' when dis/reconnected
-    sigc::signal<void, bool> signal_connected;
-	sigc::signal<void, ustring, int, ustring> signal_host_port_pwd;
-
+    sigc::signal<void, mpd_status *> sgnl_statusInfo;
+    sigc::signal<void> sgnl_newSong;
+    sigc::signal<void, bool> sgnl_connected;		
+	sigc::signal<void, gm_songList, int> sgnl_plistupdate;
+	sigc::signal<void, int,int,int> sgnl_dbase_statistics;
+	sigc::signal<void> sgnl_rescan_started;	
+	sigc::signal<void> sgnl_update_ready;
+	sigc::signal<void> sgnl_plistsaved;
+		
   protected:
 
   private:
-//  functions
-    songInfo get_songInfo_from(mpd_Song *theSong);
-    bool statusCheck();
-    bool mpd_reconnect();
-    ustring get_string(ustring);
-    ustring get_host();
-    int get_port();
-    ustring get_password();
-    bool errorCheck(ustring);
-    std::string into_string(int in);
-//  variables
-    mpd_Connection *conn;
-    sigc::connection statusLoop;
+// functions
+	bool statusCheck();
+	bool mpd_reconnect();
+	void get_songInfo_from(gm_songInfo *, mpd_song *);
+	ustring get_musicPath();
+	ustring get_playlistPath();
+	ustring get_password();
+	ustring get_host();
+	int get_port();
+	ustring get_string(ustring);
+	bool errorCheck(ustring);
+	ustring fixTrackformat (ustring);
+	std::string into_string(int);
+	// ustring time_to_string(time_t);
+		
+// variables
+	mpd_connection *conn;
+	sigc::connection statusLoop;
     sigc::connection reconnectLoop;
-    mpd_Song *theSong;
-
-    bool
-        b_statCheckBusy,
-        b_mpdconf_found,
-        b_dbaseUpdating,
-        b_connecting,
-        b_reload,
+	gm_songInfo *current_sInfo;
+	gm_Config *config;
+		
+	bool
+		b_statCheckBusy,
+		b_mpdconf_found,
+		b_dbaseUpdating,
+		b_reload,
+		b_connecting,
 		b_no_volume;
-    int
-        current_playlist,
-        current_songNum,
-        current_songID,
-        current_status,
-        serverPort,
-		current_volume;
-    ustring
-        serverName,
-        serverPassword,
-        mpdconf_path;
+	
+	int
+		current_playlist,
+		current_status,
+		serverPort,
+		current_volume,
+		plist_lenght;
+	
+	ustring
+		serverName,
+		serverPassword,
+		mpdconf_path;
 };
 
 #endif // GM_MPDCOM_H

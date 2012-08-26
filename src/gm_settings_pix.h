@@ -25,7 +25,11 @@
 #include "grafix/mn_icon16.h"
 #include "grafix/mn_icon24.h"
 #include "grafix/mn_icon32.h"
+#include "grafix/mn_icon48.h"
 #include "grafix/con_dis.h"
 #include "grafix/con_ok.h"
+#include "grafix/st_conprofile.h"
+#include "grafix/tr_check.h"
+#include "grafix/tr_redcross.h"
 
 #endif // GM_SETTINGS_PIX_H

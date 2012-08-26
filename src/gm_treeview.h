@@ -1,7 +1,7 @@
 /*
- *  gm_library_treeview.h
+ *  gm_browser.treeview.h
  *  GUIMUP treeview class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *

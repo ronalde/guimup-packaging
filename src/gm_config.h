@@ -1,7 +1,7 @@
 /*
  *  gm_config.h
  *  GUIMUP configuration class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -22,15 +22,15 @@
 #ifndef GM_CONFIG_H
 #define GM_CONFIG_H
 
-#include <stdlib.h>
+//#include <stdlib.h>
+#include <gtkmm/main.h>
+#include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
 #include <iostream>
     using std::cout;
     using std::endl;
-#include <string>
-#include <fstream>
-#include <sstream>
+#include <fstream>	// read file
 #include <list>
 
 
@@ -43,69 +43,116 @@ struct confitem
 class gm_Config
 {
   public:
-//  functions
+
     gm_Config();
     virtual ~gm_Config ();
 
     bool get(ustring, ustring &);
     bool get(ustring, int &);
     bool get(ustring, bool &);
-
     void set(ustring, ustring);
     void set(ustring, int);
     void set(ustring, bool);
-
     bool save_config();
     bool load_config();
-
-	// server related default values
+		
+	// server
 	bool QuitMPD_onQuit;
 	ustring MPD_onQuit_command;
 	bool StartMPD_onStart;
 	ustring MPD_onStart_command;
 	bool AutoConnect;
-	bool OverrideMPDconf;
-	ustring MPD_Host;
-	int MPD_Port;
-	ustring MPD_Password;
-	ustring MPD_MusicPath;
-	ustring MPD_PlaylistPath;
-	// 'player' related default values
+	int MPD_profile;		
+	int MPD_port_1;
+	ustring MPD_name_1;
+    ustring MPD_host_1;
+    ustring MPD_password_1;
+    ustring MPD_configpath_1;
+	int MPD_port_2;
+	ustring	MPD_name_2;
+    ustring MPD_host_2;
+    ustring MPD_password_2;
+    ustring MPD_configpath_2;
+	int MPD_port_3;
+	ustring	MPD_name_3;
+    ustring MPD_host_3;
+    ustring MPD_password_3;
+    ustring MPD_configpath_3;
+							// not saved ->
+	int MPD_port_0;
+    ustring MPD_host_0;
+    ustring MPD_password_0;
+    ustring MPD_configpath_0;
+	ustring MPD_Musicpath;
+	ustring MPD_Playlistpath;
+	bool mpd_socket_conn;
+	bool mpd_outputs_allowed;
+    bool mpd_update_allowed;
+    bool mpd_deleteid_allowed;
+    bool mpd_save_allowed;
+    bool mpd_single_allowed;
+    bool mpd_consume_allowed;
+    bool mpd_xfade_allowed;
+	bool mpd_rpgain_allowed;
+    bool mpd_repeat_allowed;
+    bool mpd_random_allowed;
+    bool mpd_rescan_allowed;
+    bool mpd_shuffle_allowed;
+    bool mpd_rm_allowed;
+	bool mpd_stats_allowed;	
+	bool mpd_clear_allowed;	
+	bool mpd_local_features;
+							// <- not saved
+	// player window
 	ustring Tag_Editor;
-	ustring Art_Viewer;
-	ustring AlbumArt_File;
+	ustring Image_Viewer;
+	ustring File_Manager;
 	int Scroller_Delay;
 	int PlayerWindow_Xpos;
 	int PlayerWindow_Ypos;
+	int color_hue;
+	int color_saturation;
+	int color_value;
 	bool PlayerWindow_Max;
 	bool use_TrayIcon;
 	bool use_TimeRemaining;
-	bool toggle_Player;
-	// 'library window' default values
-	int libraryWindow_Xpos;
-	int libraryWindow_Ypos;
-	int libraryWindow_W;
-	int libraryWindow_H;
-	int libraryWindow_panePos;
-	int library_DBmode;
-	bool toggle_Library;
-	// 'settings window' default values
+	bool disable_Albumart;
+	// browser window
+	int browserWindow_Xpos;
+	int browserWindow_Ypos;
+	int browserWindow_W;
+	int browserWindow_H;
+	int browserWindow_panePos;
+	int browser_LibraryMode;
+	int browser_SearchMode;
+	ustring browser_SearchString;
+	int browser_SelectMode;
+	bool pList_mark_played;
+	bool pList_new_startplaying;	
+	bool pList_fixed_columns;
+	bool lib_fixed_columns;
+	bool lib_ignore_leading_the;
+	bool lib_sort_albums_byear;
+	int pList_artist_width;
+	int pList_title_width;
+	int pList_albumn_width;
+	int lib_column0_width;
+	int lib_column1_width;	
+	// settings window
 	int SettingsWindow_Xpos;
 	int SettingsWindow_Ypos;
-	// default font & sizes
-	ustring Font_Family;
+	// font-sizes
 	int Scroller_Fontsize;
 	int TrackInfo_Fontsize;
 	int Time_Fontsize;
 	int Album_Fontsize;
-	int library_Fontsize;
+	int browser_Fontsize;
+	int xfade_time;
 	// general
 	bool show_ToolTips;
 
   private:
-//  functions
-    bool  check_config_file();
-//  variables
+
     ustring path_file;
 	std::list <confitem> items ;
 };

@@ -1,7 +1,7 @@
 /*
  *  gm_Scroller.h
  *  GUIMUP graphical text scroller
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -22,14 +22,15 @@
 #ifndef GM_SCROLLER_H
 #define GM_SCROLLER_H
 
+
+/* #include <iostream>
+    using std::cout;
+    using std::endl;*/
 #include <gtkmm/main.h>
 #include <gtkmm/image.h>
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
-#include <iostream>
-    using std::cout;
-    using std::endl;
 
 class gm_Scroller : public Gtk::Image
 {
@@ -39,11 +40,10 @@ public:
     virtual ~gm_Scroller();
     void set_title( ustring artist, ustring title = "" );
     void set_pause( bool );
-    void set_fg( ustring );
-    void set_bg( ustring );
+    void set_colors(Gdk::RGBA, Gdk::RGBA);
     void set_size_request( int, int );
     void set_delay( int );
-    void set_font( ustring );
+    void set_font( Pango::FontDescription );
 	void on_mouse_enter();
 	void on_mouse_leave();
 
@@ -54,16 +54,15 @@ private:
     void startScroll();
     bool scrollerstep();
     bool render();
-    ustring escapeString( ustring & str );
+    ustring escapeString( ustring str );
 
 //  variables
     ustring
         newString,
-        fg_color,
-        bg_color,
-        the_font,
-        current_artist,
+		current_artist,
         current_title;
+	Pango::FontDescription pFont;
+	
     bool
         b_scrolling,
         b_pause,
@@ -78,11 +77,17 @@ private:
         all_stride,
         crp_stride,
 		cR, cG, cB;
+	Glib::RefPtr<Gdk::Pixbuf> 
+		pxb_fulltext,
+		pxb_display;
     Glib::RefPtr<Pango::Context> context;
     Glib::RefPtr<Pango::Layout> layout;
-    Glib::RefPtr<Gdk::Pixbuf> pxb_fulltext, pxb_display;
+	Cairo::RefPtr<Cairo::Context> cr;
+	Cairo::RefPtr<Cairo::ImageSurface> surface;
     guint8 *ptr_get, *ptr_put;
     sigc::connection timer;
+	Gdk::RGBA bg_color;
+	Gdk::RGBA fg_color;
 };
 
 #endif //  GM_SCROLLER_H

@@ -1,7 +1,7 @@
 /*
- *  gm_slider.h
- *  GUIMUP volume slider class
- *  (c) 2008-2009 Johan Spee
+ *  gm_Slider.h
+ *  GUIMUP volume slider
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -19,26 +19,47 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-
 #ifndef GM_SLIDER_H
 #define GM_SLIDER_H
 
-#include <gtkmm/scale.h>
+/* #include <iostream>
+    using std::cout;
+    using std::endl; */
+#include <glibmm/ustring.h>
+    using Glib::ustring;
+#include <gtkmm/main.h>
+#include <gtkmm/image.h>
+#include <gtkmm/fixed.h>
+#include <gtkmm/eventbox.h>
 
-    
-class gm_slider : public Gtk::HScale
+class gm_Slider : public Gtk::EventBox
 {
 public:
-	gm_slider();
-	~gm_slider();
+	gm_Slider();
+	virtual ~gm_Slider();
+	
+//	functions
+	void set_size_request( int, int );
+	void set_value(int);
+	int get_value();
+    void set_colors( ustring, ustring );
 
-	bool on_scroll_event(GdkEventScroll* event);
 
 protected:
 
-    
 private:
-
+	
+//  widgets
+    Gtk::Fixed pbar_fixed;
+    Gtk::Image pbar_img;
+//  vars
+	Glib::RefPtr< Gdk::Pixbuf > pxb;
+	Glib::RefPtr< Gdk::Pixbuf > pxb_scaled;
+	int prev_pos, width, height, current_volume;
+	Gdk::RGBA bg_color;
+	Gdk::RGBA fg_color;
+//	functions
+	void render_indicator();
 };
 
-#endif /* GM_SLIDER_H */
+#endif //  GM_SLIDER_H

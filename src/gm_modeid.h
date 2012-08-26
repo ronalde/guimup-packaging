@@ -1,7 +1,7 @@
 /*
  *  gm_modeid.h
  *  GUIMUP combo mode IDs
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -23,15 +23,40 @@
 #define GM_MODEID_H
 
 enum
-{/* used for: dataModeID, searchModeID, selectModeID */
-    ID_artist,
-    ID_album,
-    ID_genre,
-    ID_title,
-    ID_folder,
-    ID_search,
-    ID_plist,
-	ID_all
+{
+    // library modes
+    LB_ID_ARTIST,
+    LB_ID_ALBUM,
+    LB_ID_BYDATE,
+	LB_ID_BYEAR,
+    LB_ID_GENRE,
+    LB_ID_PLIST,
+    LB_ID_FOLDER,
+    LB_ID_SEARCH,
+	LB_ID_SONGS // libraryview only
 };
 
+enum 
+{	// search modes
+    SR_ID_ARTIST,
+    SR_ID_ALBUM,
+    SR_ID_TITLE,
+    SR_ID_GENRE
+};
+
+enum 
+{	// select modes
+    SL_ID_ARTIST,
+    SL_ID_ALBUM,
+    SL_ID_TITLE,
+    SL_ID_ALL
+};
+
+enum
+{	// lib context menu
+	MN_ID_append,
+	MN_ID_newlist,
+	MN_ID_dellist
+	
+};
 #endif // GM_MODEID_H

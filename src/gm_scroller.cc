@@ -1,7 +1,7 @@
 /*
  *  gm_Scroller.cc
  *  GUIMUP graphical text scroller
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -24,15 +24,15 @@
 gm_Scroller::gm_Scroller()
 {
     // Pango context and layout
-    context = Glib::wrap(gdk_pango_context_get());
+	context = Glib::wrap(gdk_pango_context_get());
     g_assert(context);
-    layout = Pango::Layout::create(context);
-    g_assert(layout);
+	layout = Pango::Layout::create(context);
+	g_assert(layout);
 	// defaults etc.
-	current_artist = "";
+	current_artist = " ";
 	current_title  = "";
-	fg_color = "#000000";
-	bg_color = "#ffffff";
+	fg_color.set("#000000");
+	bg_color.set("#ffffff");
 	steptime = 80;  // msec
 	scrollstep = 1;
 	scrollpos = -scrollstep;
@@ -42,45 +42,63 @@ gm_Scroller::gm_Scroller()
 	Gtk::Image::set_alignment(0.5, 0.5); // center, center
 	W_layout = H_layout = 0;
 	W_cropped = 100;
-	the_font = "sans bold 12";
+	pFont.set_family("sans");
+	pFont.set_weight(Pango::WEIGHT_BOLD);
+	pFont.set_size(11);
 	cR = cG = cB = 255; // fade in/out color
-	/* set_events(Gdk::ENTER_NOTIFY_MASK | Gdk::LEAVE_NOTIFY_MASK); */
 }
 
 
 bool gm_Scroller::render()
 {
-	// Format the string
-    ustring markupString = "<span font_desc=\"" + the_font + "\">" + newString + "</span>";
-	// Put the string in a layout
-	layout->set_markup(markupString);
-	// Get layout size in pixels
+	// reset timer
+	if (b_scrolling)
+	{
+		scrollpos = -scrollstep;
+		timer.disconnect();
+		while (timer)
+		{/* wait for time out */}
+		b_scrolling = false;
+	}
+	
+	layout->set_font_description(pFont);
+	layout->set_markup(newString);
     layout->get_pixel_size(W_layout, H_layout);
-	// Set the layout colors
-	layout->set_markup("<span foreground=\"" + fg_color + "\" background=\"" + bg_color + "\">" + markupString + "</span>");	
-	// Create a pixmap
-    Glib::RefPtr<Gdk::Pixmap> pxmp = Gdk::Pixmap::create(Glib::RefPtr<Gdk::Drawable>(NULL), W_layout, H_layout, 24);
-    g_assert(pxmp);
-	// Render layout to pixmap
-    pxmp->draw_layout(Gdk::GC::create(pxmp), 0, 0, layout);
-	// Convert pixmap to pixbuffer
+
+	surface = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, W_layout, H_layout);
+	cr = Cairo::Context::create(surface);
+
+		//draw background
+	cr->set_source_rgb(bg_color.get_red(),bg_color.get_green(),bg_color.get_blue());
+	cr->rectangle(0, 0, W_layout, H_layout);
+	cr->fill();
+	cr->move_to(0,0);
+	
+		// draw text
+	layout->update_from_cairo_context(cr);
+	cr->set_source_rgb(fg_color.get_red(),fg_color.get_green(),fg_color.get_blue());
+	layout->add_to_cairo_context(cr);
+	cr->fill();
+
 	if (W_layout <= W_cropped)
 	{
-		// display can take the full text
-		pxb_display = Gdk::Pixbuf::create(Glib::RefPtr<Gdk::Drawable>(pxmp), pxmp->get_colormap(), 0, 0, 0, 0, W_layout, H_layout);
+		// display can handle the full text
+		pxb_display = Gdk::Pixbuf::create(surface, 0, 0, W_layout, H_layout);
 		g_assert(pxb_display);
 		Gtk::Image::set(pxb_display);
 	}
 	else
 	{
 		// store the full text
-		pxb_fulltext = Gdk::Pixbuf::create(Glib::RefPtr<Gdk::Drawable>(pxmp), pxmp->get_colormap(), 0, 0, 0, 0, W_layout, H_layout);
+		pxb_fulltext = Gdk::Pixbuf::create(surface, 0, 0, W_layout, H_layout);
+		
 		g_assert(pxb_fulltext);	
 		// display a scrolling view of the full text
 		pxb_display = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, W_cropped, H_layout);
 		g_assert(pxb_display);
 		startScroll();
 	}
+	
 	return false;
 }
 
@@ -89,15 +107,7 @@ void gm_Scroller::set_title(ustring artist, ustring title)
 {
 	current_artist = artist;
 	current_title  = title;
-	// reset timer
-	if (b_scrolling)
-	{
-		scrollpos = -scrollstep;
-		timer.disconnect();
-		// wait for time out!
-		while (timer) {}
-		b_scrolling = false;
-	}
+
 	// get string
 	if (title.empty())
 		newString = "☆ " + artist + " ☆";
@@ -108,8 +118,9 @@ void gm_Scroller::set_title(ustring artist, ustring title)
 }
 
 
-ustring gm_Scroller::escapeString(ustring & str)
+ustring gm_Scroller::escapeString(ustring str_in)
 {
+	ustring str = str_in;
 	Glib::ustring::size_type pos;
 
 	// escape the & sign
@@ -198,7 +209,7 @@ bool gm_Scroller::scrollerstep()
 	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cG)/24; // G
 				ptr_pos_put++; 
 				ptr_pos_get++;				
-	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cB)/24; // B				
+	  			*ptr_pos_put = (w * *ptr_pos_get + (24 - w) * cB)/24; // B
 			}
 			else
 			if (w > W_cropped - 24)
@@ -210,7 +221,7 @@ bool gm_Scroller::scrollerstep()
 	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cG)/24; // G
 				ptr_pos_put++; 
 				ptr_pos_get++;				
-	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cB)/24; // B		
+	  			*ptr_pos_put = (wr * *ptr_pos_get + (24 - wr) * cB)/24; // B
 			}
 			else
 			{
@@ -232,27 +243,17 @@ void gm_Scroller::set_pause(bool pause)
 	b_pause = pause;
 }
 
-// foreground color in #123def format
-void gm_Scroller::set_fg( ustring fg )
+// background color
+void gm_Scroller::set_colors( Gdk::RGBA bg, Gdk::RGBA fg )
 {
 	fg_color = fg;
-}
-
-// background color in #hex format
-void gm_Scroller::set_bg( ustring bg )
-{
 	bg_color = bg;
-	
-	ustring hex;
-	
-	hex = bg.substr(1, 2);
-	sscanf(hex.data(), "%X", &cR );
-	
-	hex = bg.substr(3, 2);
-	sscanf(hex.data(), "%X", &cG );
-	
-	hex = bg.substr(5, 2);	
-	sscanf(hex.data(), "%X", &cB );
+
+	cR = (int)(256.0 * bg_color.get_red());
+	cG = (int)(256.0 * bg_color.get_green());
+	cB = (int)(256.0 * bg_color.get_blue());
+
+	render();
 }
 
 // overloaded function
@@ -272,12 +273,10 @@ void gm_Scroller::set_delay(int delay)
 	steptime = delay;
 }
 
-// Font description: [Family, Family, [ ]] [Style Style [ ]] SIZE
-// example: bold italic 14         // example: Sans, Helvetica 12
-void gm_Scroller::set_font(ustring font_desc)
+
+void gm_Scroller::set_font(Pango::FontDescription pfd)
 {
-	if (!font_desc.empty())
-		the_font = font_desc;
+	pFont = pfd;
 	set_title(current_artist, current_title);
 }
 

@@ -1,7 +1,7 @@
 /*
  *  gm_trayicon.h
  *  GUIMUP system-tray-icon class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -24,7 +24,6 @@
 #define GM_TRAY_ICON_H
 
 #include <gtkmm/statusicon.h>
-#include <gtkmm/eventbox.h>
 
     
 class gm_trayIcon : public Gtk::StatusIcon

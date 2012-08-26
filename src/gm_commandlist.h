@@ -1,7 +1,7 @@
 /*
  *  gm_commandlist.h
  *  GUIMUP struct to pass commands to mpd
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -22,15 +22,19 @@
 #ifndef GM_COMMAND_H
 #define GM_COMMAND_H
 
+enum
+{
+	CMD_DEF, // default (none)
+	CMD_DEL, // delete
+	CMD_ADD, // apend
+	CMD_INS, // insert at moveTo
+	CMD_MOV, // move to moveTo
+	CMD_POS, // move pos to pos
+	CMD_DPL  // delete playlist
+};
 
-#define CMD_DEF 0 // default (none)
-#define CMD_DEL 1 // delete
-#define CMD_ADD 2 // apend
-#define CMD_INS 3 // insert at moveTo
-#define CMD_MOV 4 // move to moveTo
-#define CMD_DPL 5 // delete playlist
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <list>
 #include <glibmm/ustring.h>
     using Glib::ustring;
@@ -42,14 +46,6 @@ typedef struct gm_cmdStruct
     unsigned int songid;
     unsigned int moveTo;
     ustring file;
-    /*  below: used by the playlist when the
-        datatree sends a commandlist    */
-    int time;
-    ustring artist;
-    ustring album;
-    ustring title;
-	ustring track;
-	ustring genre;
 } gm_cmdStruct;
 
 

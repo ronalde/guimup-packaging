@@ -1,7 +1,7 @@
 /*
  *  gm_config.cc
  *  GUIMUP configuration class
- *  (c) 2008-2009 Johan Spee
+ *  (c) 2008-2012 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -24,30 +24,55 @@
 
 gm_Config::gm_Config()
 {
-	// set up the path to the config file
+	// path to the config file
     ustring homeDir = getenv("HOME");
 	if (homeDir.rfind("/") != homeDir.length()-1)
 		homeDir += "/";
-    path_file = homeDir + ".guimup.conf";
+    path_file = homeDir + ".config/guimup/guimup.conf";
 
 	bool b_no_config = false;
 	
-	// check if the config file exists
-	if (!check_config_file())
+	// check if config file exists
+	if (!Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
 	{
 		b_no_config = true;
 	}
 	else
 	{
-		cout << "Config: using " << path_file << endl;
+		cout << "Using " << path_file << endl;
 		if (!load_config())
 		{
 			cout << "Config: file could not be opened." << endl;
 			b_no_config = true;
 		}
 	}
+
+	// not saved
+	MPD_port_0 = 0;
+	MPD_host_0 = "";
+	MPD_password_0 = "";
+	MPD_configpath_0 = "";
+	MPD_Musicpath = "";
+	MPD_Playlistpath = "";
+	mpd_socket_conn = false;
+	mpd_outputs_allowed = false;
+    mpd_update_allowed = false;
+    mpd_deleteid_allowed = false;
+    mpd_save_allowed = false;
+    mpd_single_allowed = false;
+    mpd_consume_allowed = false;
+    mpd_xfade_allowed = false;
+	mpd_rpgain_allowed = false;
+    mpd_repeat_allowed = false;
+    mpd_random_allowed = false;
+    mpd_rescan_allowed = false;
+    mpd_shuffle_allowed = false;
+    mpd_rm_allowed = false;
+	mpd_stats_allowed = false;
+	mpd_clear_allowed = false;
+	mpd_local_features = false;
 	
-	// server related default values
+	// server
 	if (b_no_config | !get("QuitMPD_onQuit", QuitMPD_onQuit))
 		QuitMPD_onQuit = false;
 	if (b_no_config | !get("MPD_onQuit_command", MPD_onQuit_command))
@@ -58,72 +83,124 @@ gm_Config::gm_Config()
 		MPD_onStart_command = "mpd";
 	if (b_no_config | !get("AutoConnect",AutoConnect))
 		AutoConnect = true;
-	if (b_no_config | !get("OverrideMPDconf", OverrideMPDconf))
-		OverrideMPDconf = false;
-	if (b_no_config | !get("MPD_Host", MPD_Host))
-		MPD_Host = "localhost";
-	if (b_no_config | !get("MPD_Port", MPD_Port))
-		MPD_Port =  6600;
-	if (b_no_config | !get("MPD_Password", MPD_Password))
-		MPD_Password = "";
-	if (b_no_config | !get("MPD_MusicPath", MPD_MusicPath))
-		MPD_MusicPath = "";
-	if (b_no_config | !get("MPD_PlaylistPath", MPD_PlaylistPath))
-		MPD_PlaylistPath = "";
-	// 'player' related default 
+	if (b_no_config | !get("MPD_profile", MPD_profile))
+		MPD_profile = 0;
+	if (b_no_config | !get("MPD_port_1", MPD_port_1))
+		MPD_port_1 = 6600;
+    if (b_no_config ||!get("MPD_host_1", MPD_host_1))
+		MPD_host_1 = "localhost";
+	if (b_no_config ||!get("MPD_name_1", MPD_name_1))
+		MPD_name_1 = "default";
+    if (b_no_config ||!get("MPD_password_1", MPD_password_1))
+		MPD_password_1 = "";
+    if (b_no_config ||!get("MPD_configpath_1", MPD_configpath_1))
+		MPD_configpath_1 = "/home/user/.mpd/mpd.conf";
+	if (b_no_config | !get("MPD_port_2", MPD_port_2))
+		MPD_port_2 = 6600;
+    if (b_no_config ||!get("MPD_host_2", MPD_host_2))
+		MPD_host_2 = "/home/user/.mpd/socket";
+	if (b_no_config ||!get("MPD_name_2", MPD_name_2))
+		MPD_name_2 = "socket";
+    if (b_no_config ||!get("MPD_password_2", MPD_password_2))
+		MPD_password_2 = "";
+    if (b_no_config ||!get("MPD_configpath_2", MPD_configpath_2))
+		MPD_configpath_2 = "/home/user/.mpd/mpd.conf";
+	if (b_no_config | !get("MPD_port_3", MPD_port_3))
+		MPD_port_3 = 0;
+    if (b_no_config ||!get("MPD_host_3", MPD_host_3))
+		MPD_host_3 = "";
+	if (b_no_config ||!get("MPD_name_3", MPD_name_3))
+		MPD_name_3 = "empty";
+    if (b_no_config ||!get("MPD_password_3", MPD_password_3))
+		MPD_password_3 = "";
+    if (b_no_config ||!get("MPD_configpath_3", MPD_configpath_3))
+		MPD_configpath_3 = ""; 
+	// player 
 	if (b_no_config | !get("Tag_Editor", Tag_Editor))
-		Tag_Editor = "easytag";
-	if (b_no_config | !get("Art_Viewer", Art_Viewer))
-		Art_Viewer = "eog";	
-	if (b_no_config | !get("AlbumArt_File", AlbumArt_File))
-		AlbumArt_File = "";
+		Tag_Editor = "kid3-qt";
+	if (b_no_config | !get("Image_Viewer", Image_Viewer))
+		Image_Viewer = "eog";
+	if (b_no_config | !get("File_Manager", File_Manager))
+		File_Manager = "nautilus";	
 	if (b_no_config | !get("Scroller_Delay", Scroller_Delay))
 		Scroller_Delay = 60;
+	if (b_no_config | !get("color_hue", color_hue))
+		color_hue = 204;
+	if (b_no_config | !get("color_saturation", color_saturation))
+		color_saturation = 20;
+	if (b_no_config | !get("color_value", color_value))
+		color_value = 50;
 	if (b_no_config | !get("PlayerWindow_Xpos", PlayerWindow_Xpos))
-		PlayerWindow_Xpos = 300;
+		PlayerWindow_Xpos = 100;
 	if (b_no_config | !get("PlayerWindow_Ypos", PlayerWindow_Ypos))
-		PlayerWindow_Ypos = 200;
+		PlayerWindow_Ypos = 100;
 	if (b_no_config | !get("PlayerWindow_Max", PlayerWindow_Max))
 		PlayerWindow_Max = true;
 	if (b_no_config | !get("use_TrayIcon", use_TrayIcon))
 		use_TrayIcon = true;
 	if (b_no_config | !get("use_TimeRemaining", use_TimeRemaining))
 		use_TimeRemaining = false;
-	if (b_no_config | !get("toggle_Player", toggle_Player))
-		toggle_Player = true;
-	// 'library window' default values
-	if (b_no_config | !get("libraryWindow_Xpos", libraryWindow_Xpos))
-		libraryWindow_Xpos = 300;
-	if (b_no_config | !get("libraryWindow_Ypos", libraryWindow_Ypos))
-		libraryWindow_Ypos = 200;
-	if (b_no_config | !get("libraryWindow_W", libraryWindow_W))
-		libraryWindow_W = 600;
-	if (b_no_config | !get("libraryWindow_H", libraryWindow_H))
-		libraryWindow_H = 360;
-	if (b_no_config | !get("libraryWindow_panePos", libraryWindow_panePos))
-		libraryWindow_panePos = 160;
-	if (b_no_config | !get("library_DBmode", library_DBmode))
-		library_DBmode = 0;
-	if (b_no_config | !get("toggle_Library", toggle_Library))
-		toggle_Library = true;	
-	// 'settings window' default values
+	if (b_no_config | !get("disable_Albumart", disable_Albumart))
+		disable_Albumart = false;
+	// browser
+	if (b_no_config | !get("browserWindow_Xpos", browserWindow_Xpos))
+		browserWindow_Xpos = 100;
+	if (b_no_config | !get("browserWindow_Ypos", browserWindow_Ypos))
+		browserWindow_Ypos = 100;
+	if (b_no_config | !get("browserWindow_W", browserWindow_W))
+		browserWindow_W = 600;
+	if (b_no_config | !get("browserWindow_H", browserWindow_H))
+		browserWindow_H = 400;
+	if (b_no_config | !get("browserWindow_panePos", browserWindow_panePos))
+		browserWindow_panePos = 300;
+	if (b_no_config | !get("browser_LibraryMode", browser_LibraryMode))
+		browser_LibraryMode = 0;
+	if (b_no_config | !get("browser_SearchMode", browser_SearchMode))
+		browser_SearchMode = 0;	
+	if (b_no_config | !get("browser_SelectMode", browser_SelectMode))
+		browser_SelectMode = 0;
+	if (b_no_config | !get("browser_SearchString", browser_SearchString))
+		browser_SearchString = "";	
+	if (b_no_config | !get("lib_ignore_leading_the", lib_ignore_leading_the))
+		lib_ignore_leading_the = true;
+	if (b_no_config | !get("lib_sort_albums_byear", lib_sort_albums_byear))
+		lib_sort_albums_byear = false;
+	if (b_no_config | !get("pList_mark_played", pList_mark_played))
+		pList_mark_played = true;
+	if (b_no_config | !get("pList_new_startplaying", pList_new_startplaying))
+		pList_new_startplaying = true;
+	if (b_no_config | !get("pList_fixed_columns", pList_fixed_columns))
+		pList_fixed_columns = true;
+	if (b_no_config | !get("lib_fixed_columns", lib_fixed_columns))
+		lib_fixed_columns = true;	
+	if (b_no_config | !get("pList_artist_width", pList_artist_width))
+		pList_artist_width = 100;
+	if (b_no_config | !get("pList_title_width", pList_title_width))
+		pList_title_width = 180;
+	if (b_no_config | !get("pList_albumn_width", pList_albumn_width))
+		pList_albumn_width = 140;
+	if (b_no_config | !get("lib_column0_width", lib_column0_width))
+		lib_column0_width = 120;
+	if (b_no_config | !get("lib_column1_width", lib_column1_width))
+		lib_column1_width = 120;	
+	// settings
 	if (b_no_config | !get("SettingsWindow_Xpos", SettingsWindow_Xpos))
-		SettingsWindow_Xpos = 300;
+		SettingsWindow_Xpos = 100;
 	if (b_no_config | !get("SettingsWindow_Ypos", SettingsWindow_Ypos))
-		SettingsWindow_Ypos = 200;
-	// default font & sizes
-	if (b_no_config | !get("Font_Family", Font_Family))
-		Font_Family = "Sans, DejaVu";
+		SettingsWindow_Ypos = 100;
+	// fontsizes
 	if (b_no_config | !get("Scroller_Fontsize", Scroller_Fontsize))
 		Scroller_Fontsize = 11;
 	if (b_no_config | !get("TrackInfo_Fontsize", TrackInfo_Fontsize))
 		TrackInfo_Fontsize = 9;
 	if (b_no_config | !get("Time_Fontsize", Time_Fontsize))
-		Time_Fontsize = 11;
+		Time_Fontsize = 9;
 	if (b_no_config | !get("Album_Fontsize", Album_Fontsize))
-		Album_Fontsize = 10;
-	if (b_no_config | !get("library_Fontsize", library_Fontsize))
-		library_Fontsize = 11;
+		Album_Fontsize = 9;
+	if (b_no_config | !get("browser_Fontsize", browser_Fontsize))
+		browser_Fontsize = 10;
+	if (b_no_config | !get("xfade_time", xfade_time))
+		xfade_time = 0;
 	// general
 	if (b_no_config | !get("show_ToolTips", show_ToolTips))
 		show_ToolTips = true;
@@ -135,23 +212,7 @@ gm_Config::gm_Config()
 		else
 			cout << "Config: file could not be created."<< endl;
 	}
-
 }
-
-
-// Check if the config file can be read
-bool gm_Config::check_config_file()
-{
-	std::ifstream conffile (path_file.data());
-  	if (conffile.is_open())
-    {
-   		conffile.close();
-		return true;
-    }
-	else
-		return false;
-}
-
 
 // Add a ustring item
 void gm_Config::set(ustring key, ustring value)
@@ -209,7 +270,7 @@ void gm_Config::set(ustring key, int value)
     }
 }
 
-// Add a string item
+// Add a bool item
 void gm_Config::set(const ustring key, bool value)
 {
 	bool keyfound = false;
@@ -250,7 +311,7 @@ bool gm_Config::load_config()
 	std::ifstream conffile (path_file.data());
   	if (conffile.is_open())
     {
-	    while (! conffile.eof() )
+	    while (!conffile.eof() )
    		{
    			getline (conffile,s_line);
 			u_line = s_line;
@@ -278,50 +339,75 @@ bool gm_Config::load_config()
 }
 
 
-// Save the options in a config file
 bool gm_Config::save_config()
 {
-	// server related default values
+	// server
 	set("QuitMPD_onQuit", QuitMPD_onQuit);
 	set("MPD_onQuit_command", MPD_onQuit_command);
 	set("StartMPD_onStart", StartMPD_onStart);
 	set("MPD_onStart_command", MPD_onStart_command);
 	set("AutoConnect",AutoConnect);
-	set("OverrideMPDconf", OverrideMPDconf);
-	set("MPD_Host", MPD_Host);
-	set("MPD_Port", MPD_Port);
-	set("MPD_Password", MPD_Password);
-	set("MPD_MusicPath", MPD_MusicPath);
-	set("MPD_PlaylistPath", MPD_PlaylistPath);
-	// 'player' related default 
+	set("MPD_profile", MPD_profile);
+	set("MPD_port_1", MPD_port_1);
+    set("MPD_host_1", MPD_host_1);
+	set("MPD_name_1", MPD_name_1);
+    set("MPD_password_1", MPD_password_1);
+    set("MPD_configpath_1", MPD_configpath_1);
+	set("MPD_port_2", MPD_port_2);
+    set("MPD_host_2", MPD_host_2);
+	set("MPD_name_2", MPD_name_2);
+    set("MPD_password_2", MPD_password_2);
+    set("MPD_configpath_2", MPD_configpath_2);
+	set("MPD_port_3", MPD_port_3);
+    set("MPD_host_3", MPD_host_3);
+	set("MPD_name_3", MPD_name_3);
+    set("MPD_password_3", MPD_password_3);
+    set("MPD_configpath_3", MPD_configpath_3);
+	// player
 	set("Tag_Editor", Tag_Editor);
-	set("Art_Viewer", Art_Viewer);
-	set("AlbumArt_File", AlbumArt_File);
+	set("Image_Viewer", Image_Viewer);
+	set("File_Manager", File_Manager);
 	set("Scroller_Delay", Scroller_Delay);
+	set("color_hue", color_hue);
+	set("color_saturation", color_saturation);
+	set("color_value", color_value);	
 	set("PlayerWindow_Xpos", PlayerWindow_Xpos);
 	set("PlayerWindow_Ypos", PlayerWindow_Ypos);
 	set("PlayerWindow_Max", PlayerWindow_Max);
 	set("use_TrayIcon", use_TrayIcon);
 	set("use_TimeRemaining", use_TimeRemaining);
-	set("toggle_Player", toggle_Player);
-	// 'library window' default values
-	set("libraryWindow_Xpos", libraryWindow_Xpos);
-	set("libraryWindow_Ypos", libraryWindow_Ypos);
-	set("libraryWindow_W", libraryWindow_W);
-	set("libraryWindow_H", libraryWindow_H);
-	set("libraryWindow_panePos", libraryWindow_panePos);
-	set("library_DBmode", library_DBmode);
-	set("toggle_Library", toggle_Library);
-	// 'settings window' default values
+	set("disable_Albumart", disable_Albumart);
+	// browser
+	set("browserWindow_Xpos", browserWindow_Xpos);
+	set("browserWindow_Ypos", browserWindow_Ypos);
+	set("browserWindow_W", browserWindow_W);
+	set("browserWindow_H", browserWindow_H);
+	set("browserWindow_panePos", browserWindow_panePos);
+	set("browser_LibraryMode", browser_LibraryMode);
+	set("browser_SearchMode", browser_SearchMode);
+	set("browser_SelectMode", browser_SelectMode);
+	set("browser_SearchString", browser_SearchString);
+	set("lib_ignore_leading_the", lib_ignore_leading_the);
+	set("lib_sort_albums_byear", lib_sort_albums_byear);
+	set("pList_mark_played", pList_mark_played);
+	set("pList_new_startplaying", pList_new_startplaying);
+	set("pList_fixed_columns", pList_fixed_columns);
+	set("lib_fixed_columns", lib_fixed_columns);
+	set("pList_artist_width", pList_artist_width);
+	set("pList_title_width", pList_title_width);
+	set("pList_albumn_width", pList_albumn_width);
+	set("lib_column0_width", lib_column0_width);
+	set("lib_column1_width", lib_column1_width);
+	// settings
 	set("SettingsWindow_Xpos", SettingsWindow_Xpos);
 	set("SettingsWindow_Ypos", SettingsWindow_Ypos);
-	// default font & sizes
-	set("Font_Family", Font_Family);
+	// fonsizes
 	set("Scroller_Fontsize", Scroller_Fontsize);
 	set("TrackInfo_Fontsize", TrackInfo_Fontsize);
 	set("Time_Fontsize", Time_Fontsize);
 	set("Album_Fontsize", Album_Fontsize);
-	set("library_Fontsize", library_Fontsize);
+	set("browser_Fontsize", browser_Fontsize);
+	set("xfade_time", xfade_time);
 	// general
 	set("show_ToolTips", show_ToolTips);
 	
@@ -329,8 +415,8 @@ bool gm_Config::save_config()
 	std::ofstream conffile (path_file.data());
 	if (conffile.is_open())
 	{
-		conffile << "# Guimup configuration settings\n";
-		conffile << "# Delete this file to restore defaults\n";
+		conffile << "# Guimup configuration file\n";
+		conffile << "# Delete to restore defaults\n";
 		conffile << "\n";		
 		std::list<confitem>::iterator it;	
 		for (it = items.begin(); it != items.end(); ++it)
@@ -347,7 +433,6 @@ bool gm_Config::save_config()
     }
     return result;
 }
-
 
 // get the ustring value of "key"
 bool gm_Config::get(ustring key, ustring &theString)
