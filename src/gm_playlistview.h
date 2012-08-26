@@ -37,6 +37,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <glibmm/convert.h>     // filename_from_uri
 #include <sigc++/sigc++.h>
 #include "gm_songinfo.h"
 #include "gm_config.h"

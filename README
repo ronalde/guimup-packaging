@@ -1,0 +1,83 @@
+    ______________________________________________________________________
+
+    GUIMUP
+    version 0.3.2
+
+    for MPD 0.16.0 and above.
+    ______________________________________________________________________
+
+    GUIMUP is a client for the Music Player Daemon (MPD) written in c++ and
+    Gtkmm. The program can be used with most Linux desktops (KDE, GNOME, XFCE)
+    and is covered by the General Public License (see LICENSE below).
+
+    The clean interface makes controlling MPD's many features easy and intuitive.
+    The focus is on mouse handling: playlist management is done entirely by
+    drag-&-drop; playback functions are directly accessible from the system tray.
+    Guimup turns MPD into a perfect desktop music player.
+
+    Copyright (C) 2012 Johan Spee
+    guimup@coonsden.com
+    ______________________________________________________________________
+
+    LICENSE
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program (the file named COPYING).
+    If not, see http://www.gnu.org/licenses/
+    ______________________________________________________________________
+
+    DEPENDENCIES
+
+	libmpdclient2	(>= 2.3)
+	libsoup2.4-1	(>= 2.36)
+	libgtkmm-3.0-1	(>= 3.2)     
+   	libunique-3.0-0	(>= 3.0.2)
+
+    To COMPILE from source:
+
+    [1] additionally install the corresponding developmentfiles
+        (plus the usual: make, automake, cpp, gcc, g++ etc.)
+
+    [2] create the makefile run: ./configure.
+
+    [3] next run: make.
+
+    [4] install the binary: sudo cp ./guimup /usr/bin/guimup
+	(or run it from the source directory)
+    ______________________________________________________________________
+
+    KDE, GNOME and XFCE
+
+    Altough the program depends on Gtkmm it does not require Gnome, nor is it
+    integrated with Gnome in any way.
+    ______________________________________________________________________
+
+    USING GUIMUP
+
+    If MPD is configured correctly it's all click, drag and drop really.
+
+    ****** CHECK OUT THE TIPS IN THE SETTINGS WINDOW ('ABOUT' TAB) ******
+
+    EXTERNAL FILES
+
+    Audio files that are not in the MPD database can be dropped on the
+    playlist. Alternatively the 'send to' or 'open with' command in your file
+    manager can be used.
+
+    But this will only work if the connection with mpd is established through
+    a so called socket. In MPD's configuration file the bind_to_address must
+    point to "~/.mpd/socket" (replace ~ with the full path to your 'home' dir).
+    In Guimup's login profile (in the settings window) 'Host' must be set
+    exactly the same.
+    ______________________________________________________________________
+

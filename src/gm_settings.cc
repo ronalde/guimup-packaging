@@ -288,7 +288,7 @@ gm_settings::gm_settings()
 		abt_grid_main.set_row_spacing(6);
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
-		abt_label.set_markup("<b>Guimup 0.3.1</b>");
+		abt_label.set_markup("<b>Guimup 0.3.2</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_ALWAYS);
 		abt_scrollwin.set_shadow_type(Gtk::SHADOW_NONE);
@@ -311,7 +311,7 @@ gm_settings::gm_settings()
 		s_about += "In addition external files can be added on the commannd line (or using \"Open with\" in the file manager). Run '<i>guimup -h</i>' for an overview of the use of <span color='#1e5070'>command line parameters</span>&#10;&#10;";
 		s_about += "When files are modified without changing the timestamp a simple <span color='#1e5070'>update</span> of the database will not pick up those changes. Try 'Rescan tags' from the library's context-menu instead.&#10;&#10;";
 		s_about	+= "To view <span color='#1e5070'>album-art</span> or open files in <span color='#1e5070'>external programs</span> (such as a tag editor) both MPD and Guimup must use the SAME \"music directory\".&#10;";
-		s_about	+= "This directory is set in MPD's configuration-file: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using (usually ~/.mpd/mpd.conf).&#10;&#10;";
+		s_about	+= "This directory is set in MPD's configuration-file: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using. You can set MPD's configuration-file with the MPDCONF parameter in /etc/default/mpd.&#10;&#10;";
 		s_about	+= "Note that the music directory is not accessable to Guimup when MPD runs on a remote computer.&#10;&#10;&#10;";
 
 	

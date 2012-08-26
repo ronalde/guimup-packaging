@@ -840,7 +840,7 @@ bool gm_Player::on_timeClicked(GdkEventButton* event)
 
 bool gm_Player::on_progressClicked(GdkEventButton* event)
 {
-	if (!b_connected || event->button != 1 || (current_status != MPD_STATE_PLAY && current_status != MPD_STATE_PAUSE))
+	if (current_sInfo->type == TP_STREAM || event->button != 1 || (current_status != MPD_STATE_PLAY && current_status != MPD_STATE_PAUSE) || !b_connected)
 		return true; // stop here
 
 	double fraction = ((*event).x)/(double)pb_timeprogress.get_width();
@@ -1185,6 +1185,10 @@ void gm_Player::toggle_hide_show()
 {
 	if (b_playerWindow_hidden)
 	{
+		// DEBUG move(config->playerWindow_Xpos, config->playerWindow_Ypos);
+		present();
+		b_playerWindow_hidden = false;
+		
 		if (b_show_settingsWindow)
 		{
 			settingsWindow->move(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
@@ -1196,11 +1200,6 @@ void gm_Player::toggle_hide_show()
 			browserWindow->move(config->browserWindow_Xpos, config->browserWindow_Ypos);
 			browserWindow->present();
 		}
-
-		move(config->playerWindow_Xpos, config->playerWindow_Ypos);
-		present();
-
-		b_playerWindow_hidden = false;
 	}
 	else
 	{		
@@ -1256,7 +1255,9 @@ void gm_Player::on_hide()
 	if (config->QuitMPD_onQuit)
 	{
 		cout << "executing: " << config->MPD_onQuit_command << endl;
-		system ( (config->MPD_onQuit_command).data() );
+		int result = system ( (config->MPD_onQuit_command).data() );
+		if (result != 0)
+			cout << "Command to quit MPD failed" << endl;
 	}
 
 	if (b_connected)

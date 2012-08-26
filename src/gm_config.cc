@@ -36,8 +36,8 @@ gm_Config::gm_Config()
 	{
 		b_no_config = true;
 		ustring command = "mkdir " + path_file;
-		system(command.data());
-		if(!Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
+		int result = system(command.data());
+		if(result != 0 || !Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
 			cout << "Faild to create ~/.config/guimup" << endl;
 		else
 			cout << "Created ~/.config/guimup" << endl;
@@ -542,18 +542,19 @@ void gm_Config::run_intro_dialog()
 
 	ustring message = "&#10;<b>Please read this first!</b>&#10;&#10;&#10;";
 	message	+= "To view <span color='#1e5070'><b>album-art</b></span> or open files in <span color='#1e5070'><b>external programs</b></span> (such as a tag editor) both MPD and Guimup must use the SAME \"music directory\".&#10;&#10;";
-	message	+= "This directory is set in MPD's configuration-file: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using (usually ~/.mpd/mpd.conf).&#10;&#10;";
+	message	+= "This directory is set in <span color='#1e5070'><b>MPD's configuration-file</b></span>: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using. ";
+	message	+= "You can set MPD's configuration-file with the MPDCONF parameter in /etc/default/mpd.&#10;&#10;";
 	message	+= "Note that the music directory is not accessable to Guimup when MPD runs on a remote computer.&#10;&#10;&#10;";
 	message	+= "Guimup will accept <span color='#1e5070'><b>external files</b></span> (files that are not in MPD's database) if it is connected to MPD through a socket: both 'bind_to_address' in MPD's configuration-file and 'host' in Guimup's connection-profile must point to <i>~/.mpd/socket</i>.&#10;&#10;";
 	message	+= "External files can be passed as command-line arguments and can be dropped on the playlist.&#10;&#10;&#10;";
 	message += "<i>See the \"about\" tab in the settings window for more tips.</i>&#10;&#10;&#10;";
-	message += "<span color='#1e5070'><small>This message is only shown once.</small></span>";
+	message += "<span color='#1e5070'><small>(This message is only shown once.)</small></span>";
 
 	Gtk::Grid content;
 	content.set_row_spacing(20);
 	content.set_orientation(Gtk::ORIENTATION_VERTICAL);
 	Gtk::Label label("", 0.0, 0.5);
-	label.set_size_request(250, 250);
+	label.set_size_request(250, 100);
 	label.set_line_wrap(true);
 	label.set_use_markup(true);
 	label.set_markup(message);
@@ -562,7 +563,7 @@ void gm_Config::run_intro_dialog()
 	content.attach(label,0,0,1,1);
 	content.show();
 	label.show();
-	dlg.set_size_request(300, 300);
+	dlg.set_size_request(300, 100);
 
 	dlg.run();	
 }

@@ -36,6 +36,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <glibmm/spawn.h>       // spawn-async
 #include <string>
 #include <iostream>
     using std::cout;

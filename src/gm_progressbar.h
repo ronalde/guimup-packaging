@@ -32,6 +32,7 @@
 #include <gtkmm/fixed.h>
 #include <gtkmm/eventbox.h>
 
+
 class gm_Progressbar : public Gtk::EventBox
 {
 public:
@@ -42,7 +43,7 @@ public:
 	void set_size_request( int, int );
 	void set_fraction(double);
     void set_colors( Gdk::RGBA, Gdk::RGBA );
-
+	
 protected:
 
 private:

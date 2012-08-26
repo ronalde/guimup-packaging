@@ -98,7 +98,7 @@ void gm_mpdCom::configure()
 		if (!b_mpdconf_found)
 		{	
 			// else try ~/.mpd/mpd.conf
-		    mpdconf_path = homeDir + "/.mpd/mpd.conf";
+		    mpdconf_path = homeDir + ".mpd/mpd.conf";
 			b_mpdconf_found = Glib::file_test(mpdconf_path.data(),Glib::FILE_TEST_EXISTS);
 		    if (!b_mpdconf_found)
 			{   
@@ -209,40 +209,47 @@ bool gm_mpdCom::mpd_connect()
     if (conn != NULL)
 		mpd_disconnect(false);
 
-	if (!is_mpd_running())
-	{
-		if (config->StartMPD_onStart)
+    // if local connection
+    if ( serverName.compare("localhost") == 0  || serverName.compare("::1") == 0 ||
+         serverName.compare("127.0.0.1") == 0  || str_has_prefix(serverName,"/") || 
+         serverName.empty() )
+    {
+		if (!is_mpd_running())
 		{
-			cout << "Starting MPD (as configured)" << endl;
-			system ( (config->MPD_onStart_command).data() );
-			// wait 500 msec
-        	usleep(500000);
-			if (!is_mpd_running())
+			if (config->StartMPD_onStart)
 			{
-				cout << "Start command failed. Trying \"/usr/bin/mpd\"..." << endl;
-				system ( "/usr/bin/mpd" );
-				usleep(500000);
+				cout << "Starting MPD (as configured)" << endl;
+				int result = system ( (config->MPD_onStart_command).data() );
+				if (result != 0)	
+					cout << "MPD start command failed" << endl;
 				if (!is_mpd_running())
 				{
-					cout << "Could not start MPD. Is it installed?" << endl;
-					return false;
+					cout << "Start command failed. Trying \"/usr/bin/mpd\"..." << endl;
+					result = system ( "/usr/bin/mpd" );
+					if (result != 0 || !is_mpd_running())
+					{
+						cout << "Could not start MPD. Is it installed?" << endl;
+						return false;
+					}
 				}
 			}
+			else
+			{
+				cout << "Cannot connect: MPD is not running" << endl;
+				return false;
+			}		
 		}
-		else
-		{
-			cout << "Cannot connect: MPD is not running" << endl;
-			return false;
-		}		
-	}
+    }
+    else
+	cout << "Assuming remote connection" << endl;
     
-    // no server, no go.
-    if (serverName.empty())
+
+	if (serverName.empty())
     {
         serverName = "localhost";
-        cout << "No host name: using \"localhost\"" << endl;
+        cout << "No bind-to-address: using \"localhost\"" << endl;
     }
-    
+	
     // port number must be > 1024
     if (!(serverPort > 1024))
     {
@@ -894,8 +901,23 @@ void gm_mpdCom::get_songInfo_from(gm_songInfo *sInfo, mpd_song *theSong)
 
 ustring gm_mpdCom::fixTrackformat(ustring fixthis)
 {
-	// fix xx/xx format
-	fixthis =  fixthis.substr(0, fixthis.find("/"));
+	if (fixthis.size() > 2)
+	{
+		// fix xx/xx format
+		int pos = fixthis.find("/");
+		
+		if (pos == Glib::ustring::npos)
+			// fix xx-xx format
+			pos = fixthis.find("-");
+
+		if (pos == Glib::ustring::npos)
+			// fix xx:xx format
+			pos = fixthis.find(":");
+		
+		if (pos != Glib::ustring::npos)
+			fixthis =  fixthis.substr(0, pos);	
+	}
+	
 	// add leading zero
 	if (fixthis.length() == 1)
 		fixthis = "0" + fixthis;
@@ -2113,7 +2135,7 @@ gm_itemList gm_mpdCom::get_genre_artistlist(ustring searchfor)
 		        	newartist = mpd_song_get_tag(song, MPD_TAG_ARTIST, 0);
 				else
 					newartist = "";
-		        if (artist != newartist || album != newalbum)
+				if (artist != newartist || album != newalbum)
 		        {	
 					if (newartist.length() > max_name_length)
 						max_name_length = newartist.length();
@@ -2578,7 +2600,9 @@ bool gm_mpdCom::is_mpd_running()
 	
 		if (!(dir = opendir("/proc")))
 		{
-			system("killall mpd");
+			int result = system("killall mpd");
+			if (result != 0)
+				cout << "killall mpd failed" << endl;
 		   	cout << "Cannot determine if MPD is running: assuming it is not" << endl;
 		   	return false;
 		}

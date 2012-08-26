@@ -35,6 +35,8 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <glibmm/convert.h>     // filename_from_uri
+#include <glibmm/spawn.h>       // spawn-async
 #include <iostream>
     using std::cout;
     using std::endl;

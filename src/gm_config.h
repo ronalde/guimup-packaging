@@ -25,6 +25,7 @@
 //#include <stdlib.h>
 #include <gtkmm/main.h>
 #include <glibmm/main.h>
+#include <glibmm/fileutils.h>
 #include <gtkmm/dialog.h>
 #include <gtkmm/grid.h>
 #include <gtkmm/label.h>

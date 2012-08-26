@@ -4,7 +4,21 @@ version x.y.z
 x = superior   y = major   z = minor
 
 
-v. 0.3.1   2012 01 xx
+v. 0.3.2   2012 05 12
+
+   * fixed: Connection with remote MPD failed (tx Michael Thomsen).
+   * fixed: Track nr in xx-yy format dit not have the -yy stripped.
+   * fixed: Autodetection of mpd.config failed ('//' in path).
+   * fixed: Library context-menu showing wrong active items.
+   * fixed: Progressbar could be set when playing a stream.
+   * fixed: Toggle show/hide player problems (I hope, anyway).
+   * code:  Added check for the returncode of the "system" command.
+   * code:  Added missing includes for recent versions of Glibmm.
+   * code:  Added link to gthread for recent versions of Glibmm.
+   * docs:  The readme file is no longer empty.
+
+
+v. 0.3.1   2012 01 25
 
    bugfix release
 

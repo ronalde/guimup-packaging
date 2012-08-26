@@ -20,6 +20,7 @@
  */
 
 #include <gtkmm/main.h>
+#include <glibmm/stringutils.h>
 #include <unique/unique.h>
 #include "gm_player.h"
 #include <iostream>

@@ -20,8 +20,9 @@ LT_INIT
 
 
 
-PKG_CHECK_MODULES(GUIMUP, libsoup-2.4
-unique-3.0
+PKG_CHECK_MODULES(GUIMUP, unique-3.0
+gthread-2.0
+libsoup-2.4
 [gtkmm-3.0 libmpdclient])
 
 

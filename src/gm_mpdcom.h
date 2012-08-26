@@ -26,6 +26,7 @@
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
+#include <glibmm/stringutils.h>
 #include <fstream>
 #include <iostream>
     using std::cout;
@@ -39,6 +40,7 @@
 #include "gm_config.h"
 #include "gm_itemlist.h"
 #include "gm_commandlist.h"
+
 
 typedef struct gm_mpd_version
 {

@@ -1010,6 +1010,17 @@ bool gm_libraryView::on_button_pressed(GdkEventButton* event)
 {
 	if( (event->type == GDK_BUTTON_PRESS) && (event->button == 3) )
 	{
+		if (theSelection->count_selected_rows() == 0)
+		{
+			imi_newplist->set_sensitive(false);
+			imi_append->set_sensitive(false);
+		}
+		else
+		{
+			imi_newplist->set_sensitive(true);
+			imi_append->set_sensitive(true);
+		}
+			
 		rClickMenu->popup(event->button, event->time);
 		return true; 
 	}
@@ -1028,32 +1039,28 @@ void gm_libraryView::on_selection_changed()
 	if (count == 0)
 	{
 		imi_delplist->set_sensitive(false);
-		imi_newplist->set_sensitive(false);
-		imi_append->set_sensitive(false);
-		imi_fileman->set_sensitive(false);
-		imi_tagedit->set_sensitive(false);
-		imi_reload->set_sensitive(false);	
+		imi_submenu->set_sensitive(false);
 		return;
 	}
-	else
-	{
-		if (libModeID == LB_ID_PLIST && config->mpd_rm_allowed)
-			imi_delplist->set_sensitive(true);
-		else
-			imi_delplist->set_sensitive(false);	
-		imi_append->set_sensitive(true);
-		imi_newplist->set_sensitive(true);
-	}
 
+	if (libModeID == LB_ID_PLIST && config->mpd_rm_allowed)
+		imi_delplist->set_sensitive(true);
+	else
+		imi_delplist->set_sensitive(false);	
+	
 	if ( count == 1 && config->mpd_local_features)
 	{
+		bool submenuitems = false;
 		std::vector<Gtk::TreeModel::Path> selpaths = theSelection->get_selected_rows();
 		std::vector<Gtk::TreeModel::Path>::iterator path = selpaths.begin();
 		Gtk::TreeModel::Row row = *(libTreeStore->get_iter(*path));
 		gm_listItem lit = row[libCols.col_listitem];
 	
 		if ((lit.type == TP_SONG || lit.type == TP_FOLDER || lit.type == TP_PLAYLIST) && !(config->File_Manager).empty())
+		{	
 			imi_fileman->set_sensitive(true);
+			submenuitems = true;
+		}
 		else
 			imi_fileman->set_sensitive(false);
 
@@ -1061,12 +1068,18 @@ void gm_libraryView::on_selection_changed()
 		if (lit.type == TP_SONG || lit.type == TP_FOLDER)
 		{
 			if(!(config->Tag_Editor).empty() )
+			{
 				imi_tagedit->set_sensitive(true);
+				submenuitems = true;
+			}
 			else
 				imi_tagedit->set_sensitive(false);
 
 			if (!b_connected  || (!config->mpd_rescan_allowed && !config->mpd_update_allowed))
+			{
 				imi_reload->set_sensitive(false);
+				submenuitems = true;
+			}
 			else
 				imi_reload->set_sensitive(true);
 		}
@@ -1076,14 +1089,15 @@ void gm_libraryView::on_selection_changed()
 			imi_reload->set_sensitive(false);
 		}
 
+		if (submenuitems)
+			imi_submenu->set_sensitive(true);
+		else
+			imi_submenu->set_sensitive(false);
+
 		return;
 	}
 	else
-	{
-		imi_fileman->set_sensitive(false);
-		imi_tagedit->set_sensitive(false);
-		imi_reload->set_sensitive(false);
-	}
+		imi_submenu->set_sensitive(false);
 	
 	
 	if ( count == 1 ) // no need for smart select
