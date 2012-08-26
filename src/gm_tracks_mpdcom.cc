@@ -1,7 +1,7 @@
 /*
  *  gm_tracks_mpdCom.cc
  *  GUIMUP mpd communicator class for the tracks window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -152,20 +152,25 @@ bool tracks_mpdCom::mpd_connect(ustring host, int port, ustring pwd)
 
     // Connect (host, port, connection timeout (sec))
     conn = mpd_newConnection(serverName.data(), serverPort ,2);
-	mpd_finishCommand(conn);
 	
-    if (conn->error || conn == NULL)
+    if (conn->error)
     {
-        mpd_clearError(conn);
-		mpd_finishCommand(conn);
-        if (conn != NULL)
+		mpd_clearError(conn);
+
+		if (conn != NULL)
         {
             mpd_closeConnection(conn);
             conn = NULL;
         }
-        b_connecting = false;
-        return false;
     }
+	
+	if (conn == NULL)
+	{
+		b_connecting = false;
+        return false;
+	}
+	else
+		mpd_finishCommand(conn);
 
     // Let's tickle MPD
     mpd_sendStatusCommand(conn);
@@ -225,7 +230,6 @@ bool tracks_mpdCom::mpd_reconnect()
         if (conn->error)
 		{
             mpd_clearError(conn);
-			mpd_finishCommand(conn);
 		}
 
         if (conn != NULL)
@@ -233,9 +237,12 @@ bool tracks_mpdCom::mpd_reconnect()
             mpd_closeConnection(conn);
             conn = NULL;
         }
+		
         b_connecting = false;
         return true;
     }
+	else
+		mpd_finishCommand(conn);
 
     // login if there is a password
     if (!serverPassword.empty())
@@ -523,7 +530,7 @@ void tracks_mpdCom::data_update()
         return;
     }
     b_dbaseUpdating = TRUE;
-    mpd_sendUpdateCommand(conn, (char*)"");
+    mpd_sendUpdateCommand(conn, (char*)"/");
     mpd_finishCommand(conn);
     errorCheck("mpd_sendUpdateCommand");
     // when ready: see statusloop
@@ -731,6 +738,7 @@ void tracks_mpdCom::execute_cmds(gm_commandList cmdlist, bool resetlist)
         return;
     }
 
+	bool b_max_reached = false;
     std::list<gm_cmdStruct>::iterator iter;
     for (iter = cmdlist.begin(); iter != cmdlist.end(); ++iter)
     {
@@ -752,7 +760,11 @@ void tracks_mpdCom::execute_cmds(gm_commandList cmdlist, bool resetlist)
             {
                 if (plistlength + 1  > plistMax)
                 {
-                    cout << "Reached max playlist size: " << plistMax << endl;
+					if (!b_max_reached)
+					{
+                		cout << "Reached max playlist size: " << plistMax << endl;
+						b_max_reached = true;
+					}
                     break;
                 }
                 current_playlist++; // prevent update
@@ -814,6 +826,7 @@ void tracks_mpdCom::execute_cmds(gm_commandList cmdlist, bool resetlist)
     errorCheck("mpd_sendCommandListEnd");
 
     cmdlist.clear();
+	current_songID = -1;
     if (resetlist)
         current_playlist = -1;
 }
@@ -826,7 +839,6 @@ gm_itemList tracks_mpdCom::get_albumlist(ustring artist)
     if (conn == NULL)
         return itemlist;
 
-    // If the artist has tracks with no album tag, "???" is added.
     if (!artist.empty())
     {
         mpd_InfoEntity *ntity = NULL;
@@ -843,8 +855,8 @@ gm_itemList tracks_mpdCom::get_albumlist(ustring artist)
                         listItem newItem;
                         newItem.type = TP_ALBUM;
                         newItem.album = "???";
-						newItem.sorter = newItem.album;
                         newItem.artist = artist;
+						newItem.sorter = newItem.artist + newItem.album;
                         itemlist.push_back(newItem);
 						mpd_freeSong(newSong);
                         mpd_freeInfoEntity(ntity);
@@ -873,8 +885,8 @@ gm_itemList tracks_mpdCom::get_albumlist(ustring artist)
             newItem.type = TP_ALBUM;
             newItem.artist = artist;
             theAlbum = albumname;
-            newItem.album = theAlbum;
-			newItem.sorter = newItem.album;
+			newItem.album = theAlbum;
+			newItem.sorter = newItem.artist + newItem.album;
             itemlist.push_back(newItem);
             free(albumname);
         }
@@ -892,7 +904,7 @@ gm_itemList tracks_mpdCom::get_folderlist(ustring dirPath)
         return itemlist;
 
     mpd_InfoEntity * ntity;
-
+	
     mpd_sendLsInfoCommand(conn, dirPath.data());
     if (errorCheck("pd_sendLsInfoCommand"))
     {
@@ -905,9 +917,33 @@ gm_itemList tracks_mpdCom::get_folderlist(ustring dirPath)
                 newItem.dirpath = path;
                 // put only the folder name in 'file'
                 newItem.name = path.substr(path.rfind("/")+1, path.length());
-				newItem.sorter = newItem.name;
                 newItem.type = TP_FOLDER;
-                itemlist.push_back(newItem);
+
+				struct stat info;
+				int file_descriptor;
+				ustring fullpath = "/home/jayes/.mpd/music/" + path + "/";
+				const char *fn = fullpath.c_str();
+				if ((file_descriptor = open(fn, O_RDONLY)) >= 0)
+				{
+						if (fstat(file_descriptor, &info) == 0) // on success 0 is returned
+						{
+							newItem.sorter = ustring(into_string((int)info.st_mtime));
+						}
+						else
+						{
+							perror("open() error");
+							newItem.sorter = newItem.name;
+						}
+						close(file_descriptor);
+						unlink(fn);
+				}
+				else
+				{
+					perror("open() error");
+					newItem.sorter = newItem.name;
+				}
+				
+				itemlist.push_back(newItem);
             }
             else
             if(ntity->type == MPD_INFO_ENTITY_TYPE_SONG)
@@ -1108,10 +1144,14 @@ gm_itemList tracks_mpdCom::get_songlist(ustring album, ustring artist)
                         newItem.title = "";
 						if (newSong->title != NULL)
                             newItem.title = newSong->title;
-						newItem.sorter = newItem.title;
                         newItem.track = "";
                         if (newSong->track != NULL)
+						{
                             newItem.track = newSong->track;
+							newItem.sorter = artist + newItem.track + newItem.title;
+						}
+						else
+							newItem.sorter = artist+ "00" + newItem.title;
                         newItem.file = "";
                         if (newSong->file != NULL)
                             newItem.file = newSong->file;
@@ -1163,10 +1203,14 @@ gm_itemList tracks_mpdCom::get_songlist(ustring album, ustring artist)
                 newItem.title = "";
                 if (newSong->title != NULL)
                     newItem.title = newSong->title;
-				newItem.sorter = newItem.title;
                 newItem.track = "";
                 if (newSong->track != NULL)
-                    newItem.track = newSong->track;
+				{
+            		newItem.track = newSong->track;
+					newItem.sorter = artist + newItem.track + newItem.title;
+				}
+				else
+					newItem.sorter = artist + "00" + newItem.title;
                 newItem.file = "";
                 if (newSong->file != NULL)
                     newItem.file = newSong->file;
@@ -1365,6 +1409,17 @@ listItem tracks_mpdCom::get_item_from(ustring filename)
             mpd_freeInfoEntity(ntity);
         }
     }
+}
+
+
+
+ustring tracks_mpdCom::into_string(int in)
+{
+    std::ostringstream ssIn;
+    ssIn << in;
+    Glib::ustring strOut = ssIn.str();
+
+    return strOut;
 }
 
 

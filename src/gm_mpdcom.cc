@@ -1,7 +1,7 @@
 /*
  *  gm_mpdcom.cc
  *  GUIMUP mpd communicator class
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -34,6 +34,7 @@ gm_mpdCom::gm_mpdCom()
 	current_songID = -1;
 	current_songNum = -1;
 	current_status = -1;
+	current_volume = 0;
 	
     // first try ~/.mpdconf
     ustring homeDir = getenv("HOME");
@@ -137,6 +138,21 @@ ustring gm_mpdCom::get_host()
 {
     ustring result = get_string("bind_to_address");
     return result;
+}
+
+void gm_mpdCom::updatefile(ustring file)
+{
+    if (conn == NULL)
+        return;
+	
+    mpd_sendUpdateCommand(conn, (char*)file.c_str());
+    mpd_finishCommand(conn);
+    if (errorCheck("mpd_sendUpdateCommand"))
+	{
+		//trigger reloading the song
+		current_songID = -1;
+		cout << "MPD database update: OK" << endl;
+	}
 }
 
 int gm_mpdCom::get_port()
@@ -270,41 +286,52 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
         cout << "Invalid port #: using 6600" << endl;
     }
 
-    // Connect (host, port, connection timeout (sec))
-    conn = mpd_newConnection(serverName.data(), serverPort ,2);
-	mpd_finishCommand(conn);
-    // If connection failed try 4 more tmes at 0.25 sec intervals
+	conn = mpd_newConnection(serverName.data(), serverPort ,2);
+
+	if (conn->error)
+	{
+		mpd_clearError(conn);
+		if (conn != NULL)
+		{
+			mpd_closeConnection(conn);
+			conn = NULL;
+		}
+	}
+	
+	if (conn != NULL)
+		mpd_finishCommand(conn);
+	
+
+    // If connection failed try 4 more tmes at 0.2 sec intervals
     // (in case mpd is starting up)
     int count = 1;
-    while ((conn->error || conn == NULL) && count < 5)
+    while (conn == NULL && count < 5)
     {
-		mpd_clearError(conn);
-		mpd_finishCommand(conn);
-        if (conn != NULL)
-        {
-            mpd_closeConnection(conn);
-            conn = NULL;
-        }
         // wait 200 msec
         usleep(200000);
+		
 		// try again
-        conn = mpd_newConnection(serverName.data(), serverPort, 2);
-		mpd_finishCommand(conn);
+		conn = mpd_newConnection(serverName.data(), serverPort ,2);
+		if (conn->error)
+		{
+			mpd_clearError(conn);
+			if (conn != NULL)
+			{
+				mpd_closeConnection(conn);
+				conn = NULL;
+			}
+		}
+	
+		if (conn != NULL)
+			mpd_finishCommand(conn);
+
         count++;
     }
 	
-    if (conn->error || conn == NULL) // Still no luck
+    if (conn == NULL) // Still no luck
     {
-		cout << "Error: " << conn->errorStr << endl;
+		cout << "Connection failed (tried " << count << " times)" << endl;
 		cout << "Is MPD running?" << endl;
-
-        if (conn != NULL)
-        {
-			mpd_clearError(conn);
-			mpd_finishCommand(conn);
-            mpd_closeConnection(conn);
-            conn = NULL;
-        }
         b_connecting = false;
         return false;
     }
@@ -314,8 +341,16 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
     // Let's tickle MPD
     mpd_sendStatusCommand(conn);
     mpd_finishCommand(conn);
+    mpd_Status * servStatus = mpd_getStatus(conn);	
+	mpd_finishCommand(conn);	
     if (conn->error) // Password required?
     {
+		if (servStatus != NULL)
+		{
+        	mpd_freeStatus(servStatus);
+			mpd_finishCommand(conn);
+		}
+		mpd_finishCommand(conn);
         mpd_clearError(conn);
 		mpd_finishCommand(conn);
 		
@@ -345,6 +380,12 @@ bool gm_mpdCom::mpd_connect(ustring host, int port, ustring pswd, bool usem)
     }
     else
     {
+		if (servStatus != NULL)
+		{
+        	mpd_freeStatus(servStatus);
+			mpd_finishCommand(conn);
+		}
+		
         if (!serverPassword.empty())
 		{
 			serverPassword = ""; // so server_reconnect won't use it
@@ -371,24 +412,26 @@ bool gm_mpdCom::mpd_reconnect()
 
     // try to connect
 	b_connecting = true;
-    conn = mpd_newConnection(serverName.data(), serverPort, 1);
-    if (conn->error || conn == NULL)
-    {
-		if (conn->error)
-		{
-			mpd_clearError(conn);
-			mpd_finishCommand(conn);
-		}
+	
+	conn = mpd_newConnection(serverName.data(), serverPort ,2);
 
+	if (conn->error)
+	{
+		mpd_clearError(conn);
 		if (conn != NULL)
 		{
 			mpd_closeConnection(conn);
 			conn = NULL;
 		}
-		
+	}
+	
+	if (conn == NULL)
+	{
 		b_connecting = false;
 		return true;
-    }
+	}
+	else
+		mpd_finishCommand(conn);	
 	
     // login if there is a password
     if (!serverPassword.empty())
@@ -497,6 +540,30 @@ void gm_mpdCom::set_repeat(bool status)
 	errorCheck("mpd_sendRepeatCommand");
 }
 
+void gm_mpdCom::volume_up(int i)
+{
+	if (conn == NULL)
+		return;
+	int vol = current_volume + i;
+	if (vol > 100)
+		vol = 100;
+	mpd_sendSetvolCommand(conn, vol);
+	mpd_finishCommand(conn);
+	errorCheck("mpd_sendSetvolCommand");
+}
+
+void gm_mpdCom::volume_down(int i)
+{
+	if (conn == NULL)
+		return;
+	int vol = current_volume - i;
+	if (vol < 0)
+		vol = 0;
+	mpd_sendSetvolCommand(conn, vol);
+	mpd_finishCommand(conn);
+	errorCheck("mpd_sendSetvolCommand");
+}
+
 void gm_mpdCom::set_volume(int vol)
 {
     if (conn == NULL)
@@ -588,8 +655,11 @@ bool gm_mpdCom::statusCheck()
     if (!errorCheck("mpd_sendStatsCommand") || servStatus == NULL)
     {
         b_statCheckBusy = false;
-    	if (servStatus != NULL)
+		if (servStatus != NULL)
+		{
         	mpd_freeStatus(servStatus);
+			mpd_finishCommand(conn);
+		}
         return true;
     }
 
@@ -598,8 +668,11 @@ bool gm_mpdCom::statusCheck()
     {
 		signal_status.emit(MPD_STATUS_STATE_UNKNOWN, "No supported mixer found");
     	b_statCheckBusy = false;
-    	if (servStatus != NULL)
+		if (servStatus != NULL)
+		{
         	mpd_freeStatus(servStatus);
+			mpd_finishCommand(conn);
+		}
         return true;
     }
 	
@@ -676,9 +749,14 @@ bool gm_mpdCom::statusCheck()
 	newInfo.mpd_repeat = servStatus->repeat;
 	signal_statusInfo.emit(newInfo);
 	
+	current_volume = servStatus->volume;
+	
 	// free memory
-    if (servStatus != NULL)
-        mpd_freeStatus(servStatus);
+	if (servStatus != NULL)
+	{
+     	mpd_freeStatus(servStatus);
+		mpd_finishCommand(conn);
+	}
 
 	// done
     b_statCheckBusy = false;

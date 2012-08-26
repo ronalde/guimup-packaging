@@ -1,7 +1,7 @@
 /*
  * tracks_mpdCom.h
  *  GUIMUP mpd communicator class for the tracks window
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -36,6 +36,9 @@
 #include "gm_songlist.h"
 #include "gm_commandlist.h"
 #include "gm_itemlist.h"
+
+#include <sys/stat.h>
+#include <fcntl.h>
 
 class tracks_mpdCom {
 
@@ -90,6 +93,7 @@ class tracks_mpdCom {
 	void get_statistics();
 	void get_playlist();
 	ustring get_string(ustring key);
+	ustring into_string(int in);
 			
 //  variables
     mpd_Connection *conn;

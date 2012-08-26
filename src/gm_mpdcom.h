@@ -1,7 +1,7 @@
 /*
  *  gm_mpdcom.h
  *  GUIMUP mpd communicator class
- *  (c) 2008 Johan Spee
+ *  (c) 2008-2009 Johan Spee
  *
  *  This file is part of Guimup
  *
@@ -35,6 +35,7 @@
 #include <list>
 #include "libmpdclient.h"
 #include "gm_songlist.h"
+#include <sys/types.h>
 
 typedef std::list<mpd_OutputEntity> outdev_list;
 
@@ -72,7 +73,10 @@ class gm_mpdCom {
     void set_random(bool);
     void set_repeat(bool);
     void set_volume(int);
+	void volume_up(int);
+	void volume_down(int);
     void set_seek(int);
+	void updatefile(ustring);
     // mpd config
     ustring get_musicPath();
     ustring get_playlistPath();
@@ -122,7 +126,8 @@ class gm_mpdCom {
         current_songNum,
         current_songID,
         current_status,
-        serverPort;
+        serverPort,
+		current_volume;
 
     ustring
         serverName,

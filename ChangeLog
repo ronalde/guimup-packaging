@@ -3,6 +3,9 @@ Guimup Change Log
 version x.y.z
 x = major   y = minor   z = update
 
+v  0.1.4b
+
+Bugfix: The program could crash when MPD was not running (or was killed).
 
 v. 0.1.4     2009 02 17
 
