@@ -59,17 +59,7 @@ gm_Player::gm_Player()
     {
         cout << "Autoconnecting (as configured)" << endl;
         if (!mpdCom->mpd_connect())
-        {
-            if (config->StartMPD_onStart)
-            {
-				cout << "Starting MPD, as configured" << endl;
-				system ( (config->MPD_onStart_command).data() );
-                if ( !mpdCom->mpd_connect() )
-					cout << "Please check the connection in the 'settings' window" << endl;
-            }
-            else
-                cout << "Make sure MPD is running and check the connection in the 'settings' window" << endl;
-        }
+			cout << "Please check the relevant options in the 'settings' window" << endl;
     }
     else
     {
@@ -134,6 +124,7 @@ void gm_Player::on_connected(bool isconnected)
     if (isconnected)
     {
         b_connected = true;
+		imi_reload->set_sensitive(true);
         set_status(0, ".");
 		if (config->mpd_local_features)
 		{
@@ -164,6 +155,7 @@ void gm_Player::on_connected(bool isconnected)
 		imi_viewer->set_sensitive(false);
 		imi_fileman->set_sensitive(false);
 		imi_tagedit->set_sensitive(false);
+		imi_reload->set_sensitive(false);
         b_connected = false;
         set_status(-1, "Not connected");
 		// song has already been reset by mpdCom:
@@ -216,6 +208,7 @@ void gm_Player::set_fonts()
 	pFont.set_weight(Pango::WEIGHT_NORMAL);
 	pFont.set_size(config->Album_Fontsize * PANGO_SCALE);
 	fxl_albuminfo.override_font(pFont);
+	fxl_albuminfo.reload();
 	
 	pFont.set_size(config->browser_Fontsize * PANGO_SCALE);	
 	browserWindow->set_listfont(pFont);
@@ -449,7 +442,7 @@ void gm_Player::set_albumart(int type)
 	}
 
 	// [5] show pxb_albmart
-	if (config->PlayerWindow_Max)
+	if (config->playerWindow_Max)
 		img_aArt.set(pxb_albmart);
 	else
 	{
@@ -556,7 +549,7 @@ void gm_Player::set_colors()
 
 void gm_Player::init_widgets()
 {
-	if (config->PlayerWindow_Max)
+	if (config->playerWindow_Max)
 	{
 		btrowPos = btrowPos_max;
 		fxl_albuminfo.set_minimode(false);
@@ -567,9 +560,9 @@ void gm_Player::init_widgets()
 		fxl_albuminfo.set_minimode(true);
 	}
 
-	int posx = config->PlayerWindow_Xpos;
+	int posx = config->playerWindow_Xpos;
 	if (posx < 0) posx = 0;
-	int posy = config->PlayerWindow_Ypos;
+	int posy = config->playerWindow_Ypos;
 	if (posy < 0) posy = 0;
 	move(posx, posy);
 	
@@ -722,7 +715,7 @@ void gm_Player::init_widgets()
 	// set tooltips after set_tooltip_text
 	set_tooltips();
 	
-	if (config->PlayerWindow_Max)
+	if (config->playerWindow_Max)
     	fx_main.show_all();
 	else
 	{
@@ -863,7 +856,7 @@ bool gm_Player::on_progressClicked(GdkEventButton* event)
 void gm_Player::save_settings()
 {
 	if (get_visible())
-		get_position(config->PlayerWindow_Xpos, config->PlayerWindow_Ypos);
+		get_position(config->playerWindow_Xpos, config->playerWindow_Ypos);
 	browserWindow->get_configs();
 	settingsWindow->get_configs();
 	config->save_config();
@@ -1031,13 +1024,13 @@ void gm_Player::on_signal(int sigID)
 		{
 			if (settingsWindow->get_visible())
 			{
-				settingsWindow->get_position(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
+				settingsWindow->get_position(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
 				settingsWindow->hide();
 			}
 			else
 			{
 				settingsWindow->load_config();
-				settingsWindow->move(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
+				settingsWindow->move(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
 				settingsWindow->present();
 			}
 			break;
@@ -1048,7 +1041,7 @@ void gm_Player::on_signal(int sigID)
 		{   
 			if (browserWindow->get_visible())
 			{
-				browserWindow->get_position(config->browserWindow_Xpos, config->browserWindow_Ypos);
+				browserWindow->get_position(config->browserWindow_Xpos,config->browserWindow_Ypos);
 				browserWindow->hide();
 			}
 			else
@@ -1064,7 +1057,7 @@ void gm_Player::on_signal(int sigID)
             if (b_minmax_busy)
                 break;
 			
-            if (config->PlayerWindow_Max)
+            if (config->playerWindow_Max)
             {
 				// get actual windowH_max & windowH_min
 				windowH_max = windowH = get_allocated_height();
@@ -1073,7 +1066,7 @@ void gm_Player::on_signal(int sigID)
                 b_minmax_xfade = true;
 				alphacycler = 255;
                 minmaxtimer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Player::miniMice), 12);
-                config->PlayerWindow_Max = false;
+                config->playerWindow_Max = false;
             }
             else
             {
@@ -1084,7 +1077,7 @@ void gm_Player::on_signal(int sigID)
                 b_minmax_xfade = false;
 				alphacycler = 0;
                 minmaxtimer = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_Player::maxiMice), 12);
-                config->PlayerWindow_Max = true;
+                config->playerWindow_Max = true;
             }
             break;
         }
@@ -1192,38 +1185,29 @@ void gm_Player::toggle_hide_show()
 {
 	if (b_playerWindow_hidden)
 	{
-		/* some window managers ignore requests for initial window positions 
-		   but honor requests after the window has been shown. We try both. */
-		
-		move(config->PlayerWindow_Xpos, config->PlayerWindow_Ypos);
-		present();
-		move(config->PlayerWindow_Xpos, config->PlayerWindow_Ypos);
-		b_playerWindow_hidden = false;
-		
 		if (b_show_settingsWindow)
 		{
-			settingsWindow->move(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
+			settingsWindow->move(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
 			settingsWindow->present();
-			settingsWindow->move(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
 		}
 		
 		if (b_show_browserWindow)
 		{
 			browserWindow->move(config->browserWindow_Xpos, config->browserWindow_Ypos);
 			browserWindow->present();
-			browserWindow->move(config->browserWindow_Xpos, config->browserWindow_Ypos);
 		}
+
+		move(config->playerWindow_Xpos, config->playerWindow_Ypos);
+		present();
+
+		b_playerWindow_hidden = false;
 	}
 	else
-	{
-		get_position(config->PlayerWindow_Xpos, config->PlayerWindow_Ypos);
-		get_window()->hide();
-		b_playerWindow_hidden = true;
-		
+	{		
 		if (settingsWindow->get_visible())
 		{
 			b_show_settingsWindow = true;
-			settingsWindow->get_position(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
+			settingsWindow->get_position(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
 			settingsWindow->hide();
 		}
 		else
@@ -1232,16 +1216,24 @@ void gm_Player::toggle_hide_show()
 		if (browserWindow->get_visible())
 		{
 			b_show_browserWindow = true;
-			browserWindow->get_position(config->browserWindow_Xpos, config->browserWindow_Ypos);
+			browserWindow->get_position(config->browserWindow_Xpos,config->browserWindow_Ypos);
 			browserWindow->hide();
 		}
 		else
 			b_show_browserWindow = false;
+		
 
+		get_position(config->playerWindow_Xpos, config->playerWindow_Ypos);
+		/* 
+		get_window() gets the Gdk::Window
+		without it the program (i.e. the Gtk::Window) will be terminated
+		*/
+		get_window()->hide(); 
+		b_playerWindow_hidden = true;
 	}
 }
 
-// window is closed
+// window is closed (or hidden)
 bool gm_Player::on_delete_event(GdkEventAny* event)
 {
 	if(b_use_trayicon)
@@ -1250,7 +1242,10 @@ bool gm_Player::on_delete_event(GdkEventAny* event)
     	return true;
 	}
 	else
+	{
+		save_settings();
 		return false; // pass on
+	}
 }
 
 // window calls this on quit

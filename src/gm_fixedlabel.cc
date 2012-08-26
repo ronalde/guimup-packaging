@@ -137,7 +137,7 @@ void gm_FixedLabel::set_info (ustring album, ustring year, ustring comment)
 			set(pxb_label);
 }
 
-// used when the color changes
+// used when the color or font changes
 void gm_FixedLabel::reload()
 {
 	set_info (thealbum, theyear, thecomment);

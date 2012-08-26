@@ -102,7 +102,7 @@ void gm_mpdCom::configure()
 			b_mpdconf_found = Glib::file_test(mpdconf_path.data(),Glib::FILE_TEST_EXISTS);
 		    if (!b_mpdconf_found)
 			{   
-				// else try /etc/.mpd/mpd.conf
+				// else try /etc/mpd.conf
 				mpdconf_path = "/etc/mpd.conf";
 				b_mpdconf_found = Glib::file_test(mpdconf_path.data(),Glib::FILE_TEST_EXISTS);
 			}
@@ -208,6 +208,33 @@ bool gm_mpdCom::mpd_connect()
 {
     if (conn != NULL)
 		mpd_disconnect(false);
+
+	if (!is_mpd_running())
+	{
+		if (config->StartMPD_onStart)
+		{
+			cout << "Starting MPD (as configured)" << endl;
+			system ( (config->MPD_onStart_command).data() );
+			// wait 500 msec
+        	usleep(500000);
+			if (!is_mpd_running())
+			{
+				cout << "Start command failed. Trying \"/usr/bin/mpd\"..." << endl;
+				system ( "/usr/bin/mpd" );
+				usleep(500000);
+				if (!is_mpd_running())
+				{
+					cout << "Could not start MPD. Is it installed?" << endl;
+					return false;
+				}
+			}
+		}
+		else
+		{
+			cout << "Cannot connect: MPD is not running" << endl;
+			return false;
+		}		
+	}
     
     // no server, no go.
     if (serverName.empty())
@@ -222,7 +249,8 @@ bool gm_mpdCom::mpd_connect()
         cout << "Invalid port: " <<  serverPort << ": [using 6600]" << endl;
         serverPort = 6600;
     }
-    
+
+	
     conn = mpd_connection_new(serverName.data(), serverPort,30000);
     
     if ( mpd_connection_get_error(conn) != MPD_ERROR_SUCCESS )
@@ -287,8 +315,10 @@ bool gm_mpdCom::mpd_connect()
         if (command.compare("status") == 0) 
 		{
             b_status_allowed = true;
+			mpd_return_pair(conn, mp);
 			break;
-		}	
+		}
+		mpd_return_pair(conn, mp);
 	}
 	mpd_response_finish(conn);
 	
@@ -691,7 +721,8 @@ bool gm_mpdCom::errorCheck(ustring action)
 {
     if (conn == NULL)
     {
-        mpd_disconnect(true);
+        mpd_disconnect(false);
+		sgnl_connected.emit(false);
         cout << "Error on " << action.data() << "\": no connection" << endl;
         cout << "Reconnecting..." << endl;
         reconnectLoop = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_mpdCom::mpd_reconnect), 2000);
@@ -777,7 +808,8 @@ bool gm_mpdCom::errorCheck(ustring action)
         
         // A fatal error occurred: disconnnect & reconnect
 		mpd_connection_clear_error(conn);
-		mpd_disconnect(true);
+		mpd_disconnect(false);
+		sgnl_connected.emit(false);
         cout << "Fatal error on \"" << action.data() << "\": " << errormsg.data() << endl;
 		cout << "Reconnecting..." << endl;
         reconnectLoop = Glib::signal_timeout().connect(sigc::mem_fun(*this, &gm_mpdCom::mpd_reconnect), 2000);
@@ -1373,7 +1405,6 @@ int gm_mpdCom::execute_single_command(gm_cmdStruct command, bool resetlist)
 	// No errorcheck: we silently ignore txt files and such
 	if (resetlist)
 		current_playlist = -1;
-	
 	return results;
 }
 
@@ -1422,8 +1453,7 @@ gm_IDlist gm_mpdCom::get_IDlist()
     mpd_response_finish(conn);
     errorCheck("mpd_send_list_queue_meta");
     if (song != NULL)
-        mpd_song_free (song);
-        
+        mpd_song_free (song); 
     return idlist;
 }
 
@@ -1567,7 +1597,6 @@ gm_itemList gm_mpdCom::get_artistlist()
     }
     mpd_response_finish (conn);
     errorCheck("get_artistlist");
-    
     return itemlist;
 }
 
@@ -1628,8 +1657,7 @@ gm_itemList gm_mpdCom::get_artist_searchlist(ustring searchfor)
         mpd_song_free (song);
     }
     mpd_response_finish (conn);
-    errorCheck("get_album_searchlist");
-    
+    errorCheck("get_album_searchlist"); 
     return itemlist;
 }
 
@@ -1656,7 +1684,7 @@ gm_itemList gm_mpdCom::get_folderlist(ustring filePath)
             newItem.file = path;
 			newItem.name = path.substr(path.rfind("/")+1, path.length());
             newItem.type = TP_FOLDER;
-            newItem.sorter = "0" + newItem.name.lowercase(); // "0" so dirs come first
+            newItem.sorter = "00" + newItem.name.lowercase(); // "00" so dirs come first
             itemlist.push_back(newItem);
         }
         else
@@ -1670,7 +1698,7 @@ gm_itemList gm_mpdCom::get_folderlist(ustring filePath)
                 	newItem.file = mpd_song_get_uri(song);
 					newItem.name = (newItem.file).substr((newItem.file).rfind("/")+1, (newItem.file).length());
 				}
-				newItem.sorter = "1" + newItem.name.lowercase(); // "1" so files come next
+				newItem.sorter = "11" + newItem.name.lowercase(); // "11" so files come next
 				if (mpd_song_get_duration(song) > 0)
                 	newItem.time = mpd_song_get_duration(song);
 				if (mpd_song_get_tag(song, MPD_TAG_ARTIST, 0) != NULL)
@@ -1687,7 +1715,6 @@ gm_itemList gm_mpdCom::get_folderlist(ustring filePath)
     } // <- while
     mpd_response_finish (conn);
     errorCheck("get_folderlist");
-    
     return itemlist;
 }
 
@@ -1723,7 +1750,7 @@ gm_itemList gm_mpdCom::get_albumlist(bool sort_by_date)
         return itemlist;
 	time_t nowtime;
   	time(&nowtime);
-	
+	int max_album_length = 0;
     ustring album = "~0~";
     ustring newalbum;
     ustring artist = "~0~";
@@ -1742,10 +1769,12 @@ gm_itemList gm_mpdCom::get_albumlist(bool sort_by_date)
         if (mpd_song_get_tag (song, MPD_TAG_ALBUM, 0) != NULL )
         {
             newalbum = mpd_song_get_tag (song, MPD_TAG_ALBUM, 0);
-            
+            if (newalbum.length() > max_album_length)
+					max_album_length = newalbum.length();
+			
             if (album != newalbum || artist != newartist)
             {
-                gm_listItem newItem;
+				gm_listItem newItem;
                 newItem.type = TP_ALBUM;
                 newItem.album = newalbum;
                 newItem.artist = newartist;
@@ -1757,8 +1786,7 @@ gm_itemList gm_mpdCom::get_albumlist(bool sort_by_date)
 					// invert the sort order: oldest last
 					newItem.modtime = nowtime - time;
                 }
-				else
-					newItem.sorter = newalbum.lowercase() + newartist.lowercase();	
+				// else : see below
                 itemlist.push_back(newItem);
                 album = newalbum;
                 artist = newartist;
@@ -1782,8 +1810,7 @@ gm_itemList gm_mpdCom::get_albumlist(bool sort_by_date)
 					// invert the sort order
 					newItem.modtime = nowtime - time;
                 }
-				else
-					newItem.sorter = newalbum.lowercase() + newartist.lowercase();
+				// else : see below
                 itemlist.push_back(newItem);
                 album = newalbum;
                 artist = newartist;
@@ -1794,7 +1821,21 @@ gm_itemList gm_mpdCom::get_albumlist(bool sort_by_date)
     }
     mpd_response_finish (conn);
     errorCheck("get_albumlist");
-  
+
+	/* 	give all album-strings the same length in the sorter
+		or album names can overlap with artist names   */
+	if (!sort_by_date)
+	{
+		std::list<gm_listItem>::iterator iter;
+		for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
+		{
+			ustring albumstring = iter->album;
+			while (albumstring.length() < max_album_length)
+				albumstring += "0";
+			iter->sorter = (albumstring + iter->artist).lowercase();
+		}
+		
+	}
     return itemlist;
 }
 
@@ -1808,7 +1849,8 @@ gm_itemList gm_mpdCom::get_album_searchlist(ustring searchfor)
     
     if (conn == NULL)
         return itemlist;
-        
+	
+    int max_album_length = 0;   
     ustring album = "~0~";
     ustring newalbum;
     ustring artist = "~0~";
@@ -1828,14 +1870,16 @@ gm_itemList gm_mpdCom::get_album_searchlist(ustring searchfor)
         if (mpd_song_get_tag (song, MPD_TAG_ALBUM, 0) != NULL )
         {
             newalbum = mpd_song_get_tag (song, MPD_TAG_ALBUM, 0);
-            
+			
+            if (newalbum.length() > max_album_length)
+				max_album_length = newalbum.length();
+			
             if (album != newalbum || artist != newartist)
             {
                 gm_listItem newItem;
                 newItem.type = TP_ALBUM;
                 newItem.album = newalbum;
                 newItem.artist = newartist;
-                newItem.sorter = newalbum.lowercase() + newartist.lowercase();
                 itemlist.push_back(newItem);
                 album = newalbum;
                 artist = newartist;
@@ -1852,7 +1896,6 @@ gm_itemList gm_mpdCom::get_album_searchlist(ustring searchfor)
                     newItem.type = TP_ALBUM;
                     newItem.album = newalbum;
                     newItem.artist = newartist;
-                    newItem.sorter = newalbum.lowercase() + newartist.lowercase();
                     itemlist.push_back(newItem);
                     album = newalbum;
                     artist = newartist;
@@ -1862,7 +1905,17 @@ gm_itemList gm_mpdCom::get_album_searchlist(ustring searchfor)
     }
     mpd_response_finish (conn);
     errorCheck("get_album_searchlist");
-    
+
+	/* 	give all album-strings the same length in the sorter
+		or album names can overlap with artist names   */
+	std::list<gm_listItem>::iterator iter;
+	for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
+	{
+		ustring albumstring = iter->album;
+		while (albumstring.length() < max_album_length)
+				albumstring += "0";
+		iter->sorter = (albumstring + iter->artist).lowercase();
+	}
     return itemlist;
 }
 
@@ -1913,6 +1966,7 @@ gm_itemList gm_mpdCom::get_yearlist()
                 newItem.album = newalbum;
 				if (mpd_song_get_tag (song, MPD_TAG_ARTIST, 0) != NULL)
 					newItem.artist = mpd_song_get_tag (song, MPD_TAG_ARTIST, 0);
+				
 				if (newyear.empty())
 				{
 					newItem.sorter = "0000" + newalbum.lowercase() + newItem.artist.lowercase();
@@ -1931,7 +1985,7 @@ gm_itemList gm_mpdCom::get_yearlist()
     }
     mpd_response_finish (conn);
     errorCheck("get_yearlist");
-    
+	
     return itemlist;
 }
 
@@ -2038,6 +2092,7 @@ gm_itemList gm_mpdCom::get_genre_artistlist(ustring searchfor)
     ustring newartist;
     ustring album = "~0~";
     ustring newalbum;
+	int max_name_length = 0;
     struct mpd_song *song;
     mpd_search_db_songs(conn, true);
 
@@ -2060,12 +2115,13 @@ gm_itemList gm_mpdCom::get_genre_artistlist(ustring searchfor)
 					newartist = "";
 		        if (artist != newartist || album != newalbum)
 		        {	
+					if (newartist.length() > max_name_length)
+						max_name_length = newartist.length();
 		            gm_listItem newItem;
 		            newItem.genre = searchfor;
 		            newItem.type = TP_ARTIST;
 		            newItem.artist = newartist;
 		            newItem.album = newalbum;
-		            newItem.sorter = (newItem.artist + newItem.album).lowercase();
 		            itemlist.push_back(newItem);
 		            artist = newartist;
 		            album = newalbum;
@@ -2088,8 +2144,7 @@ gm_itemList gm_mpdCom::get_genre_artistlist(ustring searchfor)
 		        gm_listItem newItem;
 		        newItem.type = TP_ARTIST;
 		        newItem.artist = newartist;
-		        newItem.album = newalbum;
-		        newItem.sorter = (newItem.artist + newItem.album).lowercase();
+		        newItem.album = newalbum;	        
 		        itemlist.push_back(newItem);
 		        artist = newartist;
 		        album = newalbum;
@@ -2099,7 +2154,18 @@ gm_itemList gm_mpdCom::get_genre_artistlist(ustring searchfor)
     }
     mpd_response_finish (conn);
     errorCheck("get_genre_artistlist");
-    
+
+	/* 	give all artists-strings the same length in the sorter
+		or album names can overlap with artist names   */
+    std::list<gm_listItem>::iterator iter;
+    for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
+    {
+		ustring namestring = iter->artist;
+		while (namestring.length() < max_name_length)
+		 namestring += "0";
+		iter->sorter = (namestring + iter->album).lowercase();
+	}
+	
     return itemlist;
 }
 
@@ -2219,7 +2285,7 @@ gm_itemList gm_mpdCom::get_songlist(ustring album, ustring artist, ustring genre
     }
     mpd_response_finish(conn);
     errorCheck("get_songlist");
-    
+
     return itemlist;
 }
 
@@ -2280,7 +2346,7 @@ gm_itemList gm_mpdCom::get_song_searchlist(ustring searchfor)
     
     if (conn == NULL)
         return itemlist;
-        
+    int max_title_length = 0; 
     struct mpd_song *song;
     mpd_search_db_songs(conn, false);
     mpd_search_add_tag_constraint (conn, MPD_OPERATOR_DEFAULT, MPD_TAG_TITLE, searchfor.data());
@@ -2298,7 +2364,10 @@ gm_itemList gm_mpdCom::get_song_searchlist(ustring searchfor)
 				newItem.name = (newItem.file).substr((newItem.file).rfind("/")+1, (newItem.file).length());
 			}
             newItem.type = TP_SONG; // never a TP_STREAM or TP_SONGX here
-	    	newItem.title = mpd_song_get_tag(song, MPD_TAG_TITLE, 0);			
+			if (mpd_song_get_tag(song, MPD_TAG_TITLE, 0) != NULL)
+	    		newItem.title = mpd_song_get_tag(song, MPD_TAG_TITLE, 0);
+			if (newItem.title.length() > max_title_length)
+				max_title_length = newItem.title.length();
 			if (mpd_song_get_duration(song) > 0)
 		    	newItem.time = mpd_song_get_duration(song);
 			if (mpd_song_get_tag(song, MPD_TAG_ARTIST, 0) != NULL)
@@ -2307,17 +2376,6 @@ gm_itemList gm_mpdCom::get_song_searchlist(ustring searchfor)
 		    	newItem.album = mpd_song_get_tag(song, MPD_TAG_ALBUM, 0);
 			if (mpd_song_get_tag(song, MPD_TAG_GENRE, 0) != NULL)
 		    	newItem.genre = mpd_song_get_tag(song, MPD_TAG_GENRE, 0);
-            
-            if (mpd_song_get_tag(song, MPD_TAG_TRACK, 0) != NULL)
-            {
-                newItem.track = fixTrackformat(mpd_song_get_tag(song, MPD_TAG_TRACK, 0));
-                newItem.sorter = (newItem.artist + newItem.album + newItem.track + newItem.title).lowercase();
-            }
-            else
-                newItem.sorter = (newItem.artist + newItem.album + "00" + newItem.title).lowercase();
-            if (newItem.title.empty())
-                newItem.sorter = newItem.sorter + newItem.file;
-                
             itemlist.push_back(newItem);
         }
         else
@@ -2338,24 +2396,24 @@ gm_itemList gm_mpdCom::get_song_searchlist(ustring searchfor)
 					newItem.album = mpd_song_get_tag(song, MPD_TAG_ALBUM, 0);
 				if (mpd_song_get_tag(song, MPD_TAG_GENRE, 0) != NULL)
 					newItem.genre = mpd_song_get_tag(song, MPD_TAG_GENRE, 0);
-                
-                if (mpd_song_get_tag(song, MPD_TAG_TRACK, 0) != NULL)
-                {
-                    newItem.track = fixTrackformat(mpd_song_get_tag(song, MPD_TAG_TRACK, 0));
-                    newItem.sorter = (newItem.artist + newItem.album + newItem.track + newItem.title).lowercase();
-                }
-                else
-                    newItem.sorter = (newItem.artist + newItem.album + "00" + newItem.title).lowercase();
-                if (newItem.title.empty())
-                    newItem.sorter = newItem.sorter + newItem.file;
-                    
                 itemlist.push_back(newItem);
             }
         mpd_song_free (song);
     }
     mpd_response_finish (conn);
     errorCheck("get_song_searchlist");
-    
+
+	/* 	give all title-strings the same length in the sorter
+		or title names will overlap with artist names   */
+    std::list<gm_listItem>::iterator iter;
+    for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
+    {
+		ustring titlestring = iter->title;
+		while (titlestring.length() < max_title_length)
+			titlestring += "0";
+		iter->sorter = (titlestring + iter->artist + iter->album).lowercase();
+	}
+	
     return itemlist;
 }
 
@@ -2485,6 +2543,81 @@ void gm_mpdCom::set_replaygain(int mode)
     mpd_response_finish(conn);
 	errorCheck("set_replaygain");
 }
+
+
+bool gm_mpdCom::is_mpd_running()
+{	
+	struct stat sts;
+	bool b_isrunning = false;
+	
+	// try pidof
+	if (stat("/bin/pidof", &sts) == 0)
+	{
+		if( system("pidof mpd > /dev/null") == 0)
+		b_isrunning = true;
+	}
+	else
+	// try pgrep
+	if (stat("/usr/bin/pgrep", &sts) == 0)
+	{
+		if( system("pgrep mpd > /dev/null") == 0)
+			b_isrunning = true;
+	}
+
+	if (b_isrunning)
+		return true;
+	else
+	{
+		DIR* dir;
+		struct dirent* ent;
+		char* endptr;
+		char buf[512];
+		const char* name = "mpd";
+		const char* path = "/usr/bin/mpd";
+		bool result = false;
+	
+		if (!(dir = opendir("/proc")))
+		{
+			system("killall mpd");
+		   	cout << "Cannot determine if MPD is running: assuming it is not" << endl;
+		   	return false;
+		}
+
+		while((ent = readdir(dir)) != NULL)
+		{
+		    // if endptr is not '\0', dir is not numeric: ignore it
+		    long lpid = strtol(ent->d_name, &endptr, 10);
+		    if (*endptr != '\0')
+			{
+		        continue;
+		    }
+
+		    // try to open the 'cmdline' file
+		    snprintf(buf, sizeof(buf), "/proc/%ld/cmdline", lpid);
+		    FILE* fl = fopen(buf, "r");
+		    if (fl)
+			{
+		        if (fgets(buf, sizeof(buf), fl) != NULL)
+				{
+		            // check first token in file: program name
+		            char* first = strtok(buf, " ");
+		            if (strcmp(first, name) == 0 || strcmp(first, path) == 0)
+					{
+						fclose(fl);
+						result = true;
+						break;
+		            }
+		        }
+		        fclose(fl);
+		    }
+		}
+
+		closedir(dir);
+
+		return result;
+	}
+}
+
 
 gm_mpdCom::~gm_mpdCom()
 {

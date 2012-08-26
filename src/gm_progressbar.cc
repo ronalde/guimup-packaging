@@ -27,20 +27,21 @@ gm_Progressbar::gm_Progressbar()
 	height = 8;
 	bg_color.set("#000000");
 	fg_color.set("#FFFFFF");
-	render_indicator();
 	override_background_color(bg_color, Gtk::STATE_FLAG_NORMAL);
-	prev_pos = 0;
-	pbar_img.set(pxb);
+	prev_pos = -1;
 	pbar_img.set_alignment(0, 0);
 	pbar_img.set_double_buffered(true);
 	add(pbar_fixed);
 	pbar_fixed.put(pbar_img, 0, 1);
+	render_indicator();
+	set_fraction(0.5);
+	show_all();
 }
 
 void gm_Progressbar::set_fraction(double fraction)
 {
 	int pos = (int)(fraction * width);
-	if (!pos > 0)
+	if (pos < 1)
 		pos = 1; // 'scale_simple' doesn't like 0's
 	if (pos > width -1)
 		pos = width-1; // 1 px border at the end
@@ -59,7 +60,7 @@ void gm_Progressbar::set_size_request( int w, int h )
 	Gtk::EventBox::set_size_request(w, h);
 }
 
-// FIRST CALL set_size_request() !!
+// CALL set_size_request() FIRST!
 void gm_Progressbar::set_colors( Gdk::RGBA bg, Gdk::RGBA fg )
 {
 	fg_color = fg;

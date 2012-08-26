@@ -149,7 +149,7 @@ private:
         pxb_tr_stop,
         pxb_tr_pause,
 		pxb_tr_playlist,
-		pxb_drag_playlist;
+		pxb_drag_songs;
 	Gtk::Image 
 		img_men_save,
 		img_men_saveselect,

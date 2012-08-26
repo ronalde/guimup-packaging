@@ -123,22 +123,9 @@ void gm_libraryView::set_connected(bool iscon)
 	{
 		libTreeView.drag_source_set(DnDlist);
 		libTreeView.drag_source_set_icon(pxb_drag_playlist);
-		
-		/*if(config->mpd_rm_allowed) // FIXME ??
-			imi_delplist->set_sensitive(true);
-		else
-			imi_delplist->set_sensitive(false);
-		
-		imi_newplist->set_sensitive(true);
-		imi_append->set_sensitive(true);*/
-		
-		on_selection_changed();
 	}
 	else
 	{
-		/*imi_delplist->set_sensitive(false);
-		imi_newplist->set_sensitive(false);
-		imi_append->set_sensitive(false);*/
 		libTreeView.drag_source_unset();
 	}
 	
@@ -807,6 +794,7 @@ bool gm_libraryView::expand_genre(tm_Row row)
 
     ustring current_artist = "~0~";
     ustring current_album = "~0~";
+	int max_name_length = 0;
     std::list<gm_listItem>::iterator iter;
     for (iter = itemlist.begin(); iter != itemlist.end(); ++iter)
     {
@@ -1082,6 +1070,11 @@ void gm_libraryView::on_selection_changed()
 			else
 				imi_reload->set_sensitive(true);
 		}
+		else
+		{
+			imi_tagedit->set_sensitive(false);
+			imi_reload->set_sensitive(false);
+		}
 
 		return;
 	}
@@ -1235,6 +1228,7 @@ void gm_libraryView::get_configs()
 	}
 }
 
+
 void gm_libraryView::set_columns_fixed()
 {
 	if (config->lib_fixed_columns)
@@ -1242,13 +1236,13 @@ void gm_libraryView::set_columns_fixed()
 		int width;
 		column0.set_sizing(Gtk::TREE_VIEW_COLUMN_FIXED);
 		width = config->lib_column0_width;
-		if (width == 0) width = 120;
+		if (width == 0) width = 160;
 		column0.set_fixed_width(width);
 		column0.set_resizable(true);
 		
 		column1.set_sizing(Gtk::TREE_VIEW_COLUMN_FIXED);
 		width = config->lib_column1_width;
-		if (width == 0) width = 120;		
+		if (width == 0) width = 160;		
 		column1.set_fixed_width(width);
 		column1.set_resizable(true);
 		

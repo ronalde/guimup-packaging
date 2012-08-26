@@ -50,7 +50,7 @@ gm_Playlist::gm_Playlist()
     pxb_tr_stop = Gdk::Pixbuf::create_from_inline(-1, tr_stop, false);
     pxb_tr_pause = Gdk::Pixbuf::create_from_inline(-1, tr_pause, false);
     pxb_tr_playlist = Gdk::Pixbuf::create_from_inline(-1, tr_playlist, false);
-	pxb_drag_playlist = Gdk::Pixbuf::create_from_inline(-1, drag_playlist, false);
+	pxb_drag_songs = Gdk::Pixbuf::create_from_inline(-1, drag_songs, false);
 	// scrollbars
 	set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 	add(plTreeView);
@@ -321,8 +321,8 @@ void gm_Playlist::set_nrColumn_width()
 	int w, h;
 	layout->set_text(into_string(plistLength));
 	layout->get_pixel_size(w,h);
-	if (w < 8)
-		w =8;
+	if (w < 16)
+		w = 16;
 	column1.set_fixed_width(w + 8);
 }
 
@@ -1297,7 +1297,7 @@ void gm_Playlist::set_connected(bool iscon)
 	{
 		plTreeView.drag_dest_set(DnDlist);
 		plTreeView.drag_source_set(DnDlist);
-		plTreeView.drag_source_set_icon(pxb_drag_playlist);
+		plTreeView.drag_source_set_icon(pxb_drag_songs);
 
 		if (config->mpd_deleteid_allowed)
 			imi_purge->set_sensitive(true);

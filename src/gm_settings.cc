@@ -260,16 +260,19 @@ gm_settings::gm_settings()
 		stl_lb_hue.set_markup("<small>Hue</small>");
 		stl_lb_hue.set_alignment(0, 0.5);
 		stl_lb_hue.set_hexpand(true);
-		stl_scl_hue.set_draw_value(false);
-		stl_scl_hue.set_range (0, 360);
+		stl_scl_hue = new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL);
+		stl_scl_hue->set_draw_value(false);
+		stl_scl_hue->set_range (0, 360);
 		stl_lb_sat.set_markup("<small>Saturation</small>");
 		stl_lb_sat.set_alignment(0, 0.5);
-		stl_scl_sat.set_draw_value(false);
-		stl_scl_sat.set_range (0, 100);
+		stl_scl_sat = new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL);
+		stl_scl_sat->set_draw_value(false);
+		stl_scl_sat->set_range (0, 100);
 		stl_lb_val.set_markup("<small>Value</small>");
 		stl_lb_val.set_alignment(0, 0.5);
-		stl_scl_val.set_range (0, 100);
-		stl_scl_val.set_draw_value(false);
+		stl_scl_val = new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL);
+		stl_scl_val->set_range (0, 100);
+		stl_scl_val->set_draw_value(false);
 		stl_grid_preview.set_row_spacing(0);
 		stl_fr_preview.set_margin_top(6);
 		stl_lb_titleinfo.set_markup("<b>☆ artist : title ☆</b>");
@@ -285,7 +288,7 @@ gm_settings::gm_settings()
 		abt_grid_main.set_row_spacing(6);
 		pxb = Gdk::Pixbuf::create_from_inline(-1, mn_icon32, false);
 		abt_image.set(pxb);
-		abt_label.set_markup("<b>Guimup 0.3.0</b>");
+		abt_label.set_markup("<b>Guimup 0.3.1</b>");
 		abt_label.set_alignment(0, 0.5);
 		abt_scrollwin.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_ALWAYS);
 		abt_scrollwin.set_shadow_type(Gtk::SHADOW_NONE);
@@ -302,12 +305,16 @@ gm_settings::gm_settings()
         s_about += "The <span color='#1e5070'>volume</span> can be controlled with the mouse wheel when the cursor is on the system-tray icon - and by using the slider in the player.&#10;&#10;";
         s_about += "Pressing the spacebar in the playlist scrolls the <span color='#1e5070'>current song</span> into view.&#10;&#10;";
         s_about += "A <span color='#1e5070'>scrolling title</span> speeds up (quite a bit) when the mouse cursor is moved over it.&#10;&#10;";
-        s_about += "<span color='#1e5070'>Album-art</span> must be located in the same directory with the music file. The program looks for a filename that matches <i>*albumart*, *folder*, *front*, </i> or <i>*cover* (in that order).</i>";
-        s_about += "Note that Guimup must be able to access MPD's music directory (and files).&#10;&#10;";
+        s_about += "<span color='#1e5070'>Album-art</span> must be located in the same directory with the music file. The program looks for a filename that matches <i>*albumart*, *folder*, *front*, </i> or <i>*cover* (in that order).</i>&#10;&#10;";
         s_about += "<span color='#1e5070'>Selecting</span> an item in the library tree will disable the selection of subitems. A selected artist's albums, for instance, can not be selected because the artist already includes them.&#10;&#10;";
-        s_about += "Guimup will accept <span color='#1e5070'>external files</span> (files that are not in MPD's database) if it is connected to MPD through a socket (both 'bind_to_address' in MPD's configuration file and 'host' in Guimup's connection profile must point to <i>~/.mpd/socket</i>). Files can be dropped on the playlist.&#10;&#10;";
+        s_about += "Guimup will accept <span color='#1e5070'>external files</span> (files that are not in MPD's database) if it is connected to MPD through a socket (both 'bind_to_address' in MPD's configuration-file and 'host' in Guimup's connection-profile must point to <i>~/.mpd/socket</i>). Files can be dropped on the playlist.&#10;&#10;";
 		s_about += "In addition external files can be added on the commannd line (or using \"Open with\" in the file manager). Run '<i>guimup -h</i>' for an overview of the use of <span color='#1e5070'>command line parameters</span>&#10;&#10;";
 		s_about += "When files are modified without changing the timestamp a simple <span color='#1e5070'>update</span> of the database will not pick up those changes. Try 'Rescan tags' from the library's context-menu instead.&#10;&#10;";
+		s_about	+= "To view <span color='#1e5070'>album-art</span> or open files in <span color='#1e5070'>external programs</span> (such as a tag editor) both MPD and Guimup must use the SAME \"music directory\".&#10;";
+		s_about	+= "This directory is set in MPD's configuration-file: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using (usually ~/.mpd/mpd.conf).&#10;&#10;";
+		s_about	+= "Note that the music directory is not accessable to Guimup when MPD runs on a remote computer.&#10;&#10;&#10;";
+
+	
 		s_about += "<b>Enjoy!&#10;&#10;</b>";
 		abt_text.set_justify(Gtk::JUSTIFY_CENTER);
 		abt_text.set_size_request(240,-1);
@@ -405,11 +412,11 @@ gm_settings::gm_settings()
 	stl_grid_main.attach(stl_fr_colors,0,1,1,1);
 			stl_fr_colors.add(stl_grid_colors);
 				stl_grid_colors.attach(stl_lb_hue,0,0,1,1);
-				stl_grid_colors.attach(stl_scl_hue,0,1,1,1);
+				stl_grid_colors.attach(*stl_scl_hue,0,1,1,1);
 				stl_grid_colors.attach(stl_lb_sat,0,2,1,1);
-				stl_grid_colors.attach(stl_scl_sat,0,3,1,1);
+				stl_grid_colors.attach(*stl_scl_sat,0,3,1,1);
 				stl_grid_colors.attach(stl_lb_val,0,4,1,1);
-				stl_grid_colors.attach(stl_scl_val,0,5,1,1);
+				stl_grid_colors.attach(*stl_scl_val,0,5,1,1);
 			 	stl_grid_colors.attach(stl_grid_previewreset,1,5,1,1);
 					stl_grid_previewreset.add(stl_bt_colreset);
 			  	stl_grid_colors.attach(stl_fr_preview,0,6,2,1);
@@ -437,11 +444,11 @@ gm_settings::gm_settings()
              &gm_settings::on_button_connect) );
 	stl_bt_fontreset.signal_clicked().connect(sigc::mem_fun(*this,
              &gm_settings::on_fonts_reset) );
-	stl_scl_hue.signal_value_changed().connect(sigc::mem_fun(*this,
+	stl_scl_hue->signal_value_changed().connect(sigc::mem_fun(*this,
              &gm_settings::on_color_change) );
-	stl_scl_sat.signal_value_changed().connect(sigc::mem_fun(*this,
+	stl_scl_sat->signal_value_changed().connect(sigc::mem_fun(*this,
              &gm_settings::on_color_change) );	
-	stl_scl_val.signal_value_changed().connect(sigc::mem_fun(*this,
+	stl_scl_val->signal_value_changed().connect(sigc::mem_fun(*this,
              &gm_settings::on_color_change) );
 	stl_bt_colreset.signal_clicked().connect(sigc::mem_fun(*this,
              &gm_settings::on_colors_reset) );
@@ -528,8 +535,8 @@ void gm_settings::on_profile_change()
 
 void gm_settings::on_button_close()
 {
-	get_position(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
-	this->hide();
+	get_position(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
+	hide();
 }
 
 
@@ -734,19 +741,19 @@ void gm_settings::on_apply_all()
 		signal_applyfonts.emit();
 	// colors
 	bool b_colors_changed = false;
-	if 	(stl_scl_sat.get_value() != config->color_saturation)
+	if 	(stl_scl_sat->get_value() != config->color_saturation)
 	{
-		config->color_saturation = stl_scl_sat.get_value();
+		config->color_saturation = stl_scl_sat->get_value();
 		b_colors_changed = true;
  	}
-	if 	(stl_scl_hue.get_value() != config->color_hue)
+	if 	(stl_scl_hue->get_value() != config->color_hue)
 	{
-		config->color_hue = stl_scl_hue.get_value();
+		config->color_hue = stl_scl_hue->get_value();
 		b_colors_changed = true;
  	}
-	if 	(stl_scl_val.get_value() != config->color_value)
+	if 	(stl_scl_val->get_value() != config->color_value)
 	{
-		config->color_value = stl_scl_val.get_value();
+		config->color_value = stl_scl_val->get_value();
 		b_colors_changed = true;
  	}
 	if (b_colors_changed)
@@ -899,18 +906,18 @@ void gm_settings::load_config()
 	stl_spb_album.set_value(config->Album_Fontsize);
 	stl_spb_library.set_value(config->browser_Fontsize);
 
-	stl_scl_hue.set_value(config->color_hue);
-	stl_scl_sat.set_value(config->color_saturation);
-	stl_scl_val.set_value(config->color_value);
+	stl_scl_hue->set_value(config->color_hue);
+	stl_scl_sat->set_value(config->color_saturation);
+	stl_scl_val->set_value(config->color_value);
 	on_color_change();
 } 
 
 
 void gm_settings::on_colors_reset()
 {
-	stl_scl_sat.set_value(20); 
-	stl_scl_hue.set_value(204);
-	stl_scl_val.set_value(50);
+	stl_scl_sat->set_value(20); 
+	stl_scl_hue->set_value(204);
+	stl_scl_val->set_value(50);
 	on_color_change();	
 }
 
@@ -918,9 +925,9 @@ void gm_settings::on_colors_reset()
 void gm_settings::on_color_change()
 {
 	// HSV
-	double sat = stl_scl_sat.get_value()/100;
-	double hue = stl_scl_hue.get_value();
-	double value = (50 - stl_scl_val.get_value())/200; // -0.25 .. +0.25
+	double sat = stl_scl_sat->get_value()/100;
+	double hue = stl_scl_hue->get_value();
+	double value = (50 - stl_scl_val->get_value())/200; // -0.25 .. +0.25
 
 	double val;
 	
@@ -1142,14 +1149,15 @@ std::string gm_settings::into_string(int in)
 bool gm_settings::on_delete_event(GdkEventAny* event)
 {
 	get_configs();
-	return false; // pass on
+	hide();
+    return true;
 }
 
 
 void gm_settings::get_configs()
 {
 	if (get_visible())
-		get_position(config->SettingsWindow_Xpos, config->SettingsWindow_Ypos);
+		get_position(config->settingsWindow_Xpos, config->settingsWindow_Ypos);
 }
 
 

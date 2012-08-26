@@ -25,6 +25,9 @@
 //#include <stdlib.h>
 #include <gtkmm/main.h>
 #include <glibmm/main.h>
+#include <gtkmm/dialog.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/label.h>
 #include <glibmm/ustring.h>
     using Glib::ustring;
 #include <iostream>
@@ -46,13 +49,6 @@ class gm_Config
 
     gm_Config();
     virtual ~gm_Config ();
-
-    bool get(ustring, ustring &);
-    bool get(ustring, int &);
-    bool get(ustring, bool &);
-    void set(ustring, ustring);
-    void set(ustring, int);
-    void set(ustring, bool);
     bool save_config();
     bool load_config();
 		
@@ -108,12 +104,12 @@ class gm_Config
 	ustring Image_Viewer;
 	ustring File_Manager;
 	int Scroller_Delay;
-	int PlayerWindow_Xpos;
-	int PlayerWindow_Ypos;
+	int playerWindow_Xpos;
+	int playerWindow_Ypos;
 	int color_hue;
 	int color_saturation;
 	int color_value;
-	bool PlayerWindow_Max;
+	bool playerWindow_Max;
 	bool use_TrayIcon;
 	bool use_TimeRemaining;
 	bool disable_Albumart;
@@ -139,8 +135,8 @@ class gm_Config
 	int lib_column0_width;
 	int lib_column1_width;	
 	// settings window
-	int SettingsWindow_Xpos;
-	int SettingsWindow_Ypos;
+	int settingsWindow_Xpos;
+	int settingsWindow_Ypos;
 	// font-sizes
 	int Scroller_Fontsize;
 	int TrackInfo_Fontsize;
@@ -155,6 +151,13 @@ class gm_Config
 
     ustring path_file;
 	std::list <confitem> items ;
+    bool get(ustring, ustring &);
+    bool get(ustring, int &);
+    bool get(ustring, bool &);
+    void set(ustring, ustring);
+    void set(ustring, int);
+    void set(ustring, bool);
+	void run_intro_dialog();
 };
 
 

@@ -33,7 +33,7 @@
 #include "grafix/tr_stop.h"
 #include "grafix/tr_pause.h"
 #include "grafix/tr_playlist.h"
-#include "grafix/drag_playlist.h"
+#include "grafix/drag_songs.h"
 //menu
 #include "grafix/tb_shuffle.h"
 #include "grafix/tr_prgbutn.h"

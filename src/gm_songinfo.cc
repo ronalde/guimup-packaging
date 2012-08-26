@@ -33,8 +33,8 @@ void gm_songInfo::reset()
     nosong = true;
     songNr = -1;
     songID = -1;
-    time = -1;
-    type = -1;
+    time = 0;
+    type = TP_NOSONG;
 	name = "";
     artist = "";
     title = "";

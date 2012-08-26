@@ -3,7 +3,25 @@ Guimup Change Log
 version x.y.z
 x = superior   y = major   z = minor
 
-v. 3.0.0   2012 02 7
+
+v. 0.3.1   2012 01 xx
+
+   bugfix release
+
+   * fixed: "Config: file could not be created" startup error.
+   * fixed: Missing 'mpd_return_pair' (segfault with mpd 0.16.6).   
+   * fixed: Sorting of searched song titles. 
+   * fixed: Sorting of genre->artist (artist could appear twice).
+   * fixed: The progressbar (did not progress sometimes).
+   * fixed: Library context-menu could have wrong items enabled. 
+   * fixed: Window positions on hide/show from systray.
+   * fixed: Album font did not update until next song.
+   * fixed: After re-connecting some features were not re-enabled.
+   * fixed: Check if MPD is running before connecting.
+   * added: A first-run dialog with some useful advice.
+
+
+v. 0.3.0   2012 01 7
 
    Completely revised and rewritten for Gnome 3
 

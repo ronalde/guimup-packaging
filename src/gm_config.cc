@@ -28,16 +28,32 @@ gm_Config::gm_Config()
     ustring homeDir = getenv("HOME");
 	if (homeDir.rfind("/") != homeDir.length()-1)
 		homeDir += "/";
-    path_file = homeDir + ".config/guimup/guimup.conf";
-
+    path_file = homeDir + ".config/guimup";
 	bool b_no_config = false;
-	
-	// check if config file exists
+
+	// ckeck if ~/.config/guimup exists
 	if (!Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
 	{
 		b_no_config = true;
+		ustring command = "mkdir " + path_file;
+		system(command.data());
+		if(!Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
+			cout << "Faild to create ~/.config/guimup" << endl;
+		else
+			cout << "Created ~/.config/guimup" << endl;
+		run_intro_dialog();		
 	}
-	else
+
+	path_file += "/guimup.conf";
+	
+	// check if config file exists
+	if (!b_no_config && !Glib::file_test(path_file.data(),Glib::FILE_TEST_EXISTS))
+	{	
+		b_no_config = true;			
+		run_intro_dialog();
+	}
+
+	if (!b_no_config)
 	{
 		cout << "Using " << path_file << endl;
 		if (!load_config())
@@ -130,12 +146,12 @@ gm_Config::gm_Config()
 		color_saturation = 20;
 	if (b_no_config | !get("color_value", color_value))
 		color_value = 50;
-	if (b_no_config | !get("PlayerWindow_Xpos", PlayerWindow_Xpos))
-		PlayerWindow_Xpos = 100;
-	if (b_no_config | !get("PlayerWindow_Ypos", PlayerWindow_Ypos))
-		PlayerWindow_Ypos = 100;
-	if (b_no_config | !get("PlayerWindow_Max", PlayerWindow_Max))
-		PlayerWindow_Max = true;
+	if (b_no_config | !get("playerWindow_Xpos", playerWindow_Xpos))
+		playerWindow_Xpos = 100;
+	if (b_no_config | !get("playerWindow_Ypos", playerWindow_Ypos))
+		playerWindow_Ypos = 100;
+	if (b_no_config | !get("playerWindow_Max", playerWindow_Max))
+		playerWindow_Max = true;
 	if (b_no_config | !get("use_TrayIcon", use_TrayIcon))
 		use_TrayIcon = true;
 	if (b_no_config | !get("use_TimeRemaining", use_TimeRemaining))
@@ -184,10 +200,10 @@ gm_Config::gm_Config()
 	if (b_no_config | !get("lib_column1_width", lib_column1_width))
 		lib_column1_width = 120;	
 	// settings
-	if (b_no_config | !get("SettingsWindow_Xpos", SettingsWindow_Xpos))
-		SettingsWindow_Xpos = 100;
-	if (b_no_config | !get("SettingsWindow_Ypos", SettingsWindow_Ypos))
-		SettingsWindow_Ypos = 100;
+	if (b_no_config | !get("settingsWindow_Xpos", settingsWindow_Xpos))
+		settingsWindow_Xpos = 100;
+	if (b_no_config | !get("settingsWindow_Ypos", settingsWindow_Ypos))
+		settingsWindow_Ypos = 100;
 	// fontsizes
 	if (b_no_config | !get("Scroller_Fontsize", Scroller_Fontsize))
 		Scroller_Fontsize = 11;
@@ -292,7 +308,7 @@ void gm_Config::set(const ustring key, bool value)
 	if (!keyfound) // add it
     {
 		confitem item;
-		item.key   = key;
+		item.key = key;
 		if (value)
 			item.value = "true";
 		else
@@ -371,9 +387,9 @@ bool gm_Config::save_config()
 	set("color_hue", color_hue);
 	set("color_saturation", color_saturation);
 	set("color_value", color_value);	
-	set("PlayerWindow_Xpos", PlayerWindow_Xpos);
-	set("PlayerWindow_Ypos", PlayerWindow_Ypos);
-	set("PlayerWindow_Max", PlayerWindow_Max);
+	set("playerWindow_Xpos", playerWindow_Xpos);
+	set("playerWindow_Ypos", playerWindow_Ypos);
+	set("playerWindow_Max", playerWindow_Max);
 	set("use_TrayIcon", use_TrayIcon);
 	set("use_TimeRemaining", use_TimeRemaining);
 	set("disable_Albumart", disable_Albumart);
@@ -399,8 +415,8 @@ bool gm_Config::save_config()
 	set("lib_column0_width", lib_column0_width);
 	set("lib_column1_width", lib_column1_width);
 	// settings
-	set("SettingsWindow_Xpos", SettingsWindow_Xpos);
-	set("SettingsWindow_Ypos", SettingsWindow_Ypos);
+	set("settingsWindow_Xpos", settingsWindow_Xpos);
+	set("settingsWindow_Ypos", settingsWindow_Ypos);
 	// fonsizes
 	set("Scroller_Fontsize", Scroller_Fontsize);
 	set("TrackInfo_Fontsize", TrackInfo_Fontsize);
@@ -515,6 +531,40 @@ bool gm_Config::get(ustring key, bool &theBool)
 		theBool = result;
 		return true;
 	}
+}
+
+
+void gm_Config::run_intro_dialog()
+{
+	Gtk::Dialog dlg("Welcome to Guimup", true);
+	dlg.add_button("OK", Gtk::RESPONSE_CANCEL);
+	dlg.set_default_response (Gtk::RESPONSE_CANCEL);
+
+	ustring message = "&#10;<b>Please read this first!</b>&#10;&#10;&#10;";
+	message	+= "To view <span color='#1e5070'><b>album-art</b></span> or open files in <span color='#1e5070'><b>external programs</b></span> (such as a tag editor) both MPD and Guimup must use the SAME \"music directory\".&#10;&#10;";
+	message	+= "This directory is set in MPD's configuration-file: make sure Guimup's connection-profile points to the configuration-file that MPD is actually using (usually ~/.mpd/mpd.conf).&#10;&#10;";
+	message	+= "Note that the music directory is not accessable to Guimup when MPD runs on a remote computer.&#10;&#10;&#10;";
+	message	+= "Guimup will accept <span color='#1e5070'><b>external files</b></span> (files that are not in MPD's database) if it is connected to MPD through a socket: both 'bind_to_address' in MPD's configuration-file and 'host' in Guimup's connection-profile must point to <i>~/.mpd/socket</i>.&#10;&#10;";
+	message	+= "External files can be passed as command-line arguments and can be dropped on the playlist.&#10;&#10;&#10;";
+	message += "<i>See the \"about\" tab in the settings window for more tips.</i>&#10;&#10;&#10;";
+	message += "<span color='#1e5070'><small>This message is only shown once.</small></span>";
+
+	Gtk::Grid content;
+	content.set_row_spacing(20);
+	content.set_orientation(Gtk::ORIENTATION_VERTICAL);
+	Gtk::Label label("", 0.0, 0.5);
+	label.set_size_request(250, 250);
+	label.set_line_wrap(true);
+	label.set_use_markup(true);
+	label.set_markup(message);
+	dlg.get_content_area()->pack_start(content);
+	content.set_border_width(10);
+	content.attach(label,0,0,1,1);
+	content.show();
+	label.show();
+	dlg.set_size_request(300, 300);
+
+	dlg.run();	
 }
 
 

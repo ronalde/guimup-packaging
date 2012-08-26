@@ -756,7 +756,9 @@ void gm_browser::set_connected(bool bconn)
 		if (config->mpd_update_allowed)
 			bt_update.set_sensitive(true);
 		else
+		{
 			bt_update.set_sensitive(false);
+		}
 
 		if (config->mpd_repeat_allowed)
 		{
@@ -941,7 +943,8 @@ std::string gm_browser::into_string(int in)
 bool gm_browser::on_delete_event(GdkEventAny* event)
 {
 	get_configs();
-	return false; // pass on
+	hide();
+   	return true;
 }
 
 

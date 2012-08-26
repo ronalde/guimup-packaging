@@ -148,12 +148,12 @@ private:
             Gtk::CheckButton cli_cb_ttips;
 			Gtk::CheckButton cli_cb_noart;
 			Gtk::Frame cli_fr_lib;
-					Gtk::Grid cli_grid_lib; // FIXME
+					Gtk::Grid cli_grid_lib;
 						Gtk::CheckButton cli_cb_byear;
             			Gtk::CheckButton cli_cb_nothe;
 						Gtk::CheckButton cli_cb_libfixed;
 			Gtk::Frame cli_fr_plist;
-					Gtk::Grid cli_grid_plist; // FIXME
+					Gtk::Grid cli_grid_plist;
 						Gtk::CheckButton cli_cb_start;
             			Gtk::CheckButton cli_cb_mark;
 						Gtk::CheckButton cli_cb_plistfixed;
@@ -182,11 +182,11 @@ private:
 				Gtk::Frame stl_fr_colors;
 				Gtk::Grid stl_grid_colors;
 					Gtk::Label stl_lb_hue;
-					Gtk::HScale stl_scl_hue;
+					Gtk::Scale *stl_scl_hue;
 					Gtk::Label stl_lb_sat;
-					Gtk::HScale stl_scl_sat;
+					Gtk::Scale *stl_scl_sat;
 					Gtk::Label stl_lb_val;
-					Gtk::HScale stl_scl_val;
+					Gtk::Scale *stl_scl_val;
 				  Gtk::Frame stl_fr_preview;
 					Gtk::Grid stl_grid_preview;
 					Gtk::EventBox stl_eb_titleinfo; // bg color
@@ -201,7 +201,7 @@ private:
 			Gtk::Frame abt_fr_swin;
             Gtk::ScrolledWindow abt_scrollwin;
             Gtk::Label abt_text;
-        Gtk::HButtonBox theButtonBox;
+        Gtk::ButtonBox theButtonBox;
             Gtk::Button but_Close, but_Apply;
 
 //  variables

@@ -33,6 +33,8 @@
 #include <list>
 #include <mpd/client.h>
 #include <ctime>
+#include <dirent.h>			// is_mpd_running()
+#include <sys/stat.h>		// is_mpd_running()
 #include "gm_songinfo.h"
 #include "gm_config.h"
 #include "gm_itemlist.h"
@@ -146,6 +148,7 @@ class gm_mpdCom {
 	ustring fixTrackformat (ustring);
 	std::string into_string(int);
 	// ustring time_to_string(time_t);
+	bool is_mpd_running();
 		
 // variables
 	mpd_connection *conn;

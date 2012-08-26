@@ -24,6 +24,7 @@
 
 #include <list>
 #include <glibmm/ustring.h>
+#include "gm_itemlist.h"
     using Glib::ustring;
 
 class gm_songInfo

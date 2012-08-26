@@ -108,7 +108,7 @@ private:
 	Gtk::Menu *plistMenu;
 	
 //	widgets
-    Gtk::HPaned hp_Paned;
+    Gtk::Paned hp_Paned;
         Gtk::Frame fr_left_outer;
       	Gtk::Label lb_lib;
 		Gtk::Grid gr_left;
