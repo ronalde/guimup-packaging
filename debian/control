@@ -2,19 +2,18 @@ Source: guimup
 Section: sound
 Priority: optional
 Maintainer: Ronald van Engelen <rvengelen@hethooghuis.nl>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev, libmpdclient-dev (>= 2.3), libsoup2.4-dev (>= 2.34), libgtkmm-3.0-dev (>= 3.2)
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, pkg-config, libpcre3, libmpdclient-dev (>= 2.3), libsoup2.4-dev (>= 2.34), libgtkmm-3.0-dev (>= 3.2)
 Standards-Version: 3.9.2
 Homepage: http://coonsden.com/
-Depends: libmpdclient2 (>= 2.3), libsoup2.4-1 (>= 2.34), libgtkmm-3.0-1 (>= 3.2)
-Enhances: mpd
-Provides: mpd-client
-Suggests: mpd
 Vcs-Git: git://github.com/ronalde/guimup.git
 Vcs-Browser: https://github.com/ronalde/guimup.git
 
 Package: guimup
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmpdclient2 (>= 2.3), libsoup2.4-1 (>= 2.34), libgtkmm-3.0-1 (>= 3.2)
+Enhances: mpd
+Provides: mpd-client
+Suggests: mpd
 Description: Gtk3 Client for MPD (the Music Player Daemon).
  Features include:
   * Support for (locally stored) albumart.
