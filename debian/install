@@ -1,8 +1,2 @@
-usr/share/applications/guimup.desktop
-usr/share/pixmaps/guimup64.png
-usr/share/pixmaps/guimup32.png
-usr/share/pixmaps/guimup32.xpm
-usr/share/pixmaps/guimup16.png
-usr/share/pixmaps/guimup64.xpm
-usr/share/pixmaps/guimup16.xpm
-usr/share/pixmaps/guimup48.png
+debian/usr/share/pixmaps/* usr/share/pixmaps/
+debian/usr/share/applications/guimup.desktop usr/share/applications/
