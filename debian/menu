@@ -1,0 +1,5 @@
+?package(guimup):needs="X11" section="Applications/Sound" \
+  title="Guimup" command="/usr/bin/guimup" \
+  icon="/usr/share/pixmaps/guimup32.xpm" \
+  icon32x32="/usr/share/pixmaps/guimup32.xpm" \
+  icon16x16="/usr/share/pixmaps/guimup16.xpm"
