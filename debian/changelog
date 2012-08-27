@@ -1,6 +1,9 @@
-guimup (0.3.3-debian1) wheezy; urgency=low
+guimup (0.3.3ppa1) precise quantal oneiric; urgency=low
 
   * Initial release
   * Switch to dpkg-source 3.0 (quilt) format
+  * Adds desktop launcher, menu file, man page, icons to original
+    source package
+  * Checked using lintian and pbuilder for Debian Wheezy, Ubuntu Oneiric, Precise and Quantal on i386 and amd64
 
- -- Ronald van Engelen <rvengelen@hethooghuis.nl>  Sun, 26 Aug 2012 16:15:00 +0200
+ -- Ronald van Engelen <rvengelen@hethooghuis.nl>  Mon, 27 Aug 2012 20:49:18 +0200
