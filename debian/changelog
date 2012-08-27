@@ -1,4 +1,4 @@
-guimup (0.3.3-1) unstable; urgency=low
+guimup (0.3.3-debian1) wheezy; urgency=low
 
   * Initial release
   * Switch to dpkg-source 3.0 (quilt) format

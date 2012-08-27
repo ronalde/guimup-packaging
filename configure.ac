@@ -25,8 +25,6 @@ libsoup-2.4
 [gtkmm-3.0 libmpdclient])
 
 
-
-
 AC_OUTPUT([
 Makefile
 src/Makefile

@@ -3,8 +3,8 @@
 
 SUBDIRS = src 
 
-guimupdocdir = ${prefix}/doc/guimup
-guimupdoc_DATA = \
+#guimupdocdir = ${prefix}/doc/guimup
+#guimupdoc_DATA = \
 	README\
 	COPYING\
 	AUTHORS\
@@ -13,9 +13,9 @@ guimupdoc_DATA = \
 	NEWS
 
 
-EXTRA_DIST = $(guimupdoc_DATA)
+#EXTRA_DIST = $(guimupdoc_DATA)
 
 
 # Remove doc directory on uninstall
-uninstall-local:
-	-rm -r $(guimupdocdir)
+#uninstall-local:
+#	-rm -r $(guimupdocdir)

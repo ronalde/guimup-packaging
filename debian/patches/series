@@ -1,1 +1,2 @@
-fix-docs-target.patch
+fix-anjuta-doc-macro.patch
+autoreconf.patch
