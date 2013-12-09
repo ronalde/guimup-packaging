@@ -1,0 +1,68 @@
+
+     ..|''||   '||'  '|' '||' '||    ||' '||'  '|' '||''|.  
+    .|'    ||   ||    |   ||   |||  |||   ||    |   ||   || 
+    ||      ||  ||    |   ||   |'|..'||   ||    |   ||...|' 
+    '|.  '. '|  ||    |   ||   | '|' ||   ||    |   ||      
+      '|...'|.   '|..'   .||. .|. | .||.   '|..'   .||.  
+
+    Quimup Change Log
+
+   version x.y.z (superior.major.minor)
+
+   v. 1.3.1   2013 12 02
+
+   * Added: Support for the 'Disc Number' tag.
+   * Added: Stream loader can handle compound urls better.
+   * Added: Manually override MPD's (remote) music dir.
+   * Fixed: Crash upon calling mpd_return_pair (Archlinux).
+   * Fixed: Player changed position after hide-show toggle.
+   * Fixed: Allow more time to connect to MPD at start-up.
+   * Fixed: Possible wrong sorting order of dragged items.
+   * Coded: Project 'includes' libmpdclient using pkg-config.
+
+
+   v. 1.3.0   2013 01 04
+
+   Quimup 1.3.0 can take advantage of new feautures in MPD 0.17
+   and accepts files by drag-n-drop or by using 'open with'.
+
+   * Added: "Drag & drop" from file manager to quimup.
+   * Added: "Open with" from file manager (%U or %F).
+   * Added: Single-instance-mode (by default).
+   * Added: Localization support (no translations yet).
+   * Added: Command line parameters (try "quimup -help").
+   * Added: Rescan tags for any selection (library menu).
+   * Added: Folder search in the media browser.
+   * Added: Check if mpd is running when quimup starts up.
+   * Added: Option to apply colors to the album info widget.
+   * Added: Music directory is requested from MPD (0.17+).
+   * Added: Playlist scrolls to drop-position after d&d.
+   * Added: Drop on playlist allows insert (not just append).
+   * Added: Manually controlled widths in library and playlist.
+   * Added: Track titles shown across all colums in library.
+   * Added: A first-run dialog with some useful tips.
+   * Added: More details on command line in case of MPD-errors.
+   * Fixed: Kb/s updated a bit too frequently.
+   * Fixed: Automatic column width was not working very well.
+   * Fixed: After playlist update 'played' status was lost.
+   * Fixed: Browser not showing up after workspace changed.
+   * Fixed: Possible sorting errors (now cAsE sEnSiTiVe).
+   * Fixed: Not all commands checked against MPD_allowed.
+   * Fixed: Not all features disabled after lost connection.
+   * Fixed: Failed to connect with remotely running mpd.
+   * Fixed: False error dialogs with remotely running mpd.
+   * Fixed: No response to xfade time setting (until toggled).
+   * Fixed: Rearranged playlist items could be in wrong order.
+   * Fixed: Commented-out lines in mpd.conf were not ignored.
+   * Fixed: Album art did not ignore non-image files.
+   * Fixed: No response to lost connection using socket.
+   * Fixed: Shuffle did not handle 'idle' item correctly.
+   * Fixed: Non fatal error on "setOutputs".
+   * Coded: Playlist management completely revised.
+   * Coded: Memory not freed when getting replaygain-mode.
+   * Coded: Compilation error "getuid not declared".
+   * Coded: Compilation error "usleep not declared".
+   * Coded: Worked around a setHsv() bug in the color picker.
+   * Coded: Rewritten update and song-reload functions.
+
+

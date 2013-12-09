@@ -1,0 +1,99 @@
+
+
+     ..|''||   '||'  '|' '||' '||    ||' '||'  '|' '||''|.  
+    .|'    ||   ||    |   ||   |||  |||   ||    |   ||   || 
+    ||      ||  ||    |   ||   |'|..'||   ||    |   ||...|' 
+    '|.  '. '|  ||    |   ||   | '|' ||   ||    |   ||      
+      '|...'|.   '|..'   .||. .|. | .||.   '|..'   .||.  
+
+
+    QUIMUP
+    Frequently Asked Questions
+
+______________________________________________________________________________
+
+q. Quimup?
+
+a. [Q]t [U]ser [I]nterface for the [Mu]sic [P]layer Daemon (0.16.0 or above).
+   A very Linuxian name indeed, and one you can Google for.
+______________________________________________________________________________
+
+q. MPD?
+
+a. MPD is a daemon that runs in the background, plays your music and maintains
+   a database of your music files. MPD does a great job, but can only be used
+   with a client: it is as useless without the client as the client is without
+   MPD. More information about mpd can be found at www.musicpd.org
+______________________________________________________________________________
+
+q. Will this QT program work with GNOME or XFCE?
+
+a. Yes. Quimup does not depend on KDE in any way. It only needs some Qt libs.
+______________________________________________________________________________
+
+q. Where does the album art come from?
+
+a. From the directory where the audio file is located. It is recommended to
+   put a 200x200 pixel bitmap named albumart.jpg in the album directory. 
+   The program looks for a filename that matches *albumart* *folder* *front*
+   *cover* or * (in that order), plus extension 'jpg' 'png' 'gif' or 'bmp'.
+______________________________________________________________________________
+
+q. Quimup can't find album art.
+
+a. Make sure /home/USER/.mpd/mpd.conf is set up correctly and that Quimup has
+   access rights to mpd's music directory and its contents. To avoid mistakes
+   set the MPDCONF parameter in /etc/default/mpd to /home/USER/.mpd/mpd.conf.
+______________________________________________________________________________
+
+q. Many features are disabled. What is the problem?
+
+a. Possibly Quimup is not connected to MPD.
+
+a. MPD does not allow the features to be used. The best solution is to run MPD
+   as a user, not as a system proces. This can be done by setting START_MPD to 
+   false in /etc/default/mpd - next let Quimup start MPD (server tab in the
+   settings window).
+
+a. Quimup does not have access to mpd's music directory and its contents. 
+   Possibly MPD and Quimup are not using the same mpd-configuration.
+   To avoid mistakes set the MPDCONF parameter in /etc/default/mpd to
+   /home/USER/.mpd/mpd.conf.
+______________________________________________________________________________
+
+q. How does 'Purge' work?
+
+a. Purge removes all played items from the playlist. Note that the property
+   is monitored by Quimup, not by MPD. If you restart Quimup all the 'played'
+   marks are lost.
+______________________________________________________________________________
+
+q. Why does connecting to MPD take so long?
+
+a. Possibly MPD and Quimup are not using the same mpd-configuration. To avoid
+   mistakes set the MPDCONF parameter in /etc/default/mpd - and make sure MPD
+   and Quimup are both using the same connection (i.e the 'bind_to_address' in
+   MPD's config and the 'host'in Quimup's login profile.)
+
+a  If MPD is started with quimup it may be busy updating the database before a
+   connection is established. In MPD's configuration set auto_update to "no".
+______________________________________________________________________________
+
+q. Why can't I open music files directly from the file manager?
+
+a. Quimup will accept external files only if it is connected to MPD through a
+   "socket": both 'bind_to_address' in MPD's configuration file and 'host' in 
+   Quimup's login profile must point to /home/USER/.mpd/socket. Files can
+   be dropped on the player or the playlist, or added  using 'open with' in
+   your file manager (%U and %F are both accepted).
+______________________________________________________________________________
+
+q. Can I make a feauture request?
+
+a. Of course you can. You can contact me at quimup@coonsden.com. But do keep
+   in mind that Quimup is a no-bells-or-whistles music player: not a tag 
+   editor, ipod manager or sound converter.
+______________________________________________________________________________
+
+
+

@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Name=Quimup
+Comment=Client for MPD (Music Player Daemon)
+GenericName=Audio Player
+Exec=quimup %U
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=quimup64
+Categories=GNOME;XFCE;Qt;Audio;Music;Player;AudioVideo
+MimeType=audio/x-mp3;audio/ogg;audio/mpeg;application/ogg;audio/x-flac;audio/x-flac+ogg;audio/x-vorbis+ogg;audio/x-speex+ogg;audio/x-oggflac;audio/x-musepack;audio/x-tta;audio/x-ms-wma;audio/x-wavpack
+StartupWMClass=Quimup
+StartupNotify=true
+Name[en_US]=quimup

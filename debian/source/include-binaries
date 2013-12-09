@@ -1,8 +1,8 @@
-debian/usr/share/pixmaps/guimup64.png
-debian/usr/share/pixmaps/guimup32.png
-debian/usr/share/pixmaps/guimup32.xpm
-debian/usr/share/pixmaps/guimup16.png
-debian/usr/share/pixmaps/guimup64.xpm
-debian/usr/share/pixmaps/guimup16.xpm
-debian/usr/share/pixmaps/guimup48.png
-debian/usr/share/applications/guimup.desktop
+debian/usr/share/pixmaps/quimup64.png
+debian/usr/share/pixmaps/quimup32.png
+debian/usr/share/pixmaps/quimup32.xpm
+debian/usr/share/pixmaps/quimup16.png
+debian/usr/share/pixmaps/quimup64.xpm
+debian/usr/share/pixmaps/quimup16.xpm
+debian/usr/share/pixmaps/quimup48.png
+debian/usr/share/applications/quimup.desktop

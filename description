@@ -1,0 +1,14 @@
+QT4 Client for MPD (the Music Player Daemon).
+
+Features include:
+
+* Support for (locally stored) albumart.
+* Support for audio streams (url).
+* Support for files that are not is MPD's database ('Drag&Drop' or 'Open With').
+* Drag & Drop playlist management.
+* Library browser (artist, album, genre, year, modified, folder & playlist mode)
+* Library search (artist, album, genre, title & folder mode).
+* Quick search-and-select in the playlist.
+* Mini-mode interface for basic control only.
+* Open folder in external programs: Tag Editor, File Manager, Image Viewer.
+* Generally a powerful but quick and 'light' application.

@@ -1,13 +1,13 @@
 Format: http://dep.debian.net/deps/dep5
-Upstream-Name: guimup
+Upstream-Name: quimup
 Source: http://coonsden.com/
 
 Files: *
-Copyright: 2009,2010,2011,2012 Johan Spee <guimup@coonsden.com>
+Copyright: 2009,2010,2011,2012,2013 Johan Spee <guimup@coonsden.com>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2012 Ronald van Engelen <rvengelen@hethooghuis.nl>
+Copyright: 2012, 2013 Ronald van Engelen <ronalde+launchpad@lacocina.nl>
 License: GPL-3.0+
 
 License: GPL-3.0+

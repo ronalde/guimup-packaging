@@ -1,6 +1,6 @@
 #!rst
 
-Guimup for Debian
+Quimup for Debian
 =================
 
 Created basic package skeleton using `dh_make --single --copyright gpl
@@ -24,14 +24,14 @@ Changes in `./debian`:
 * include `README` and `ChangeLog` from source root
 
 
-`guimup.1`
+`quimup.1`
 ----------
 
 * manual page
 * taken from sourceforge deb 
 
 
-`guimup.manpages`
+`quimup.manpages`
 -----------------
 
 * include manual page

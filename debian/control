@@ -1,28 +1,25 @@
-Source: guimup
+Source: quimup
 Section: sound
 Priority: optional
-Maintainer: Ronald van Engelen <rvengelen@hethooghuis.nl>
+Maintainer: Ronald van Engelen <ronalde+launchpad@lacocina.nl>
 Build-Depends: debhelper (>= 8.0.0), autotools-dev, pkg-config, libpcre3, libmpdclient-dev (>= 2.3), libsoup2.4-dev (>= 2.30), libgtkmm-3.0-dev
 Standards-Version: 3.9.2
 Homepage: http://coonsden.com/
-Vcs-Git: git://github.com/ronalde/guimup.git
-Vcs-Browser: https://github.com/ronalde/guimup.git
+Vcs-Git: git://github.com/ronalde/quimup.git
+Vcs-Browser: https://github.com/ronalde/quimup.git
 
-Package: guimup
+Package: quimup
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libmpdclient2 (>= 2.3), libsoup2.4-1 (>= 2.30), libgtkmm-3.0-1
 Enhances: mpd
 Provides: mpd-client
 Suggests: mpd
-Description: Gtk3 Client for MPD (the Music Player Daemon).
- Features include:
-  * Support for (locally stored) albumart.
-  * Support for audio streams (url).
-  * Drag & drop playlist management.
-  * Library browser (artist, album, genre, folder, year & timestamp mode.)
-  * Database search (artist, album, genre & title mode).
-  * Quick search-and-select in the playlist.
-  * Mini-mode interface for basic control only.
-  * Open folder in external programs to edit tags etc.
-  * Generally a light, quick and clean application.
-
+Description: QUIMUP is a client for the Music Player Daemon (MPD)
+ written in c++ and QT4. The program can be used with most Linux
+ desktops (KDE, GNOME, XFCE). 
+ .  
+ The clean interface makes controlling MPD's features easy and
+ intuitive.  The focus is on mouse handling: playlist management is
+ done entirely by drag & drop; all playback functions are accessible
+ from the system tray.  Quimup aims to turn MPD into a perfect desktop
+ music player.

@@ -1,0 +1,15 @@
+
+1.3.0 finds my music dir automatically, 1.3.1 does not!
+
+FIX path for localization in main.cpp ??
+Add more localizations
+Fix layout 'settings' for localizations
+
+
+Stef Dahlzaurux.moz@gmail.com
+Cue is supported by MPD now. I can choose *.cue in folder view with GMPC
+(Flac album).
+When cue sheet is loaded as playlist, i can used it under Quimup, but this
+new feature is planified for the future ??
+
+
