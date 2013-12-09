@@ -1,0 +1,15 @@
+Index: quimup/quimup.pro
+===================================================================
+--- quimup.orig/quimup.pro	2013-12-09 12:38:18.000000000 +0100
++++ quimup/quimup.pro	2013-12-09 12:43:09.000000000 +0100
+@@ -107,8 +107,4 @@
+ QT = core gui network
+ 
+ XUP.SHOW_QT_VERSION_WARNING = 0
+-XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
+-
+-TARGET = quimup
+-target.path = /usr/bin
+-INSTALLS += target
++XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
+\ No newline at end of file
