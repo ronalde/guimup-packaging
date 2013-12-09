@@ -1,23 +1,32 @@
-    ______________________________________________________________________
 
-    GUIMUP
-    version 0.3.3
 
-    for MPD 0.16.0 and above.
-    ______________________________________________________________________
+     ..|''||   '||'  '|' '||' '||    ||' '||'  '|' '||''|.  
+    .|'    ||   ||    |   ||   |||  |||   ||    |   ||   || 
+    ||      ||  ||    |   ||   |'|..'||   ||    |   ||...|' 
+    '|.  '. '|  ||    |   ||   | '|' ||   ||    |   ||      
+      '|...'|.   '|..'   .||. .|. | .||.   '|..'   .||.  
 
-    GUIMUP is a client for the Music Player Daemon (MPD) written in c++ and
-    Gtkmm. The program can be used with most Linux desktops (KDE, GNOME, XFCE)
+    __________________________________________________________________________
+
+    QUIMUP
+    version 1.3.1
+
+    for MPD 0.16.0 and above
+    __________________________________________________________________________
+
+    QUIMUP is a client for the Music Player Daemon (MPD) written in c++ and
+    QT4. The program can be used with most Linux desktops (KDE, GNOME, XFCE)
     and is covered by the General Public License (see LICENSE below).
 
-    The clean interface makes controlling MPD's many features easy and intuitive.
+    The clean interface makes controlling MPD's features easy and intuitive.
     The focus is on mouse handling: playlist management is done entirely by
-    drag-&-drop; playback functions are directly accessible from the system tray.
-    Guimup turns MPD into a perfect desktop music player.
+    drag-&-drop; all playback functions are accessible from the system tray.
+    Quimup aims to turn MPD into a perfect desktop music player.
 
-    Copyright (C) 2012 Johan Spee
-    guimup@coonsden.com
-    ______________________________________________________________________
+    Copyright (C) 2008 - 2013 Johan Spee
+    quimup@coonsden.com
+    www.coonsden.com
+    __________________________________________________________________________
 
     LICENSE
 
@@ -34,49 +43,56 @@
     You should have received a copy of the GNU General Public License
     along with this program (the file named COPYING).
     If not, see http://www.gnu.org/licenses/
-    ______________________________________________________________________
+    __________________________________________________________________________
 
     DEPENDENCIES
 
-	libmpdclient2	(>= 2.3)
-	libsoup2.4	(>= 2.36)
-	libgtkmm-3.0	(>= 3.2)     
+    REQUIRES : MPD 0.16.x (preferably 0.17.x)
+    DEPENDS  : libmpdclient2 (>= 2.3)
+    DEPENDS  : libqtcore4    (>= 4.8)
+    DEPENDS  : libqtgui4     (>= 4.8)
+    DEPENDS  : libqt4-network(>= 4.8)
 
-    To COMPILE from source:
+    To COMPILE from source additionally install the QT4 and libmpdclient
+    development files (on Debian libmpdclient-dev and libqt4-dev) and the
+    usual: qmake, make, gcc, cpp, g++, pkg-config, autoconf etc.
 
-    [1] additionally install the corresponding developmentfiles
-        (plus the usual: make, automake, cpp, gcc, g++ etc.)
+    [1] To create the makefile run: qmake (or qmake-qt4).
 
-    [2] create the makefile run: ./configure.
+    [2] To compile, next run: make.
 
-    [3] next run: make.
-
-    [4] install the binary: sudo cp ./guimup /usr/bin/guimup
+    [3] To install the binary: 
+	sudo cp ./quimup /usr/bin/quimup
 	(or run it from the source directory)
-    ______________________________________________________________________
+    __________________________________________________________________________
 
     KDE, GNOME and XFCE
 
-    Altough the program depends on Gtkmm it does not require Gnome, nor is it
-    integrated with Gnome in any way.
-    ______________________________________________________________________
+    Altough the program depends on QT it does not require KDE or depend on
+    other KDE libraries, nor is it integrated with KDE in any way.
 
-    USING GUIMUP
+    __________________________________________________________________________
+
+    USING QUIMUP
+
+    CHECK OUT : FAQ.txt
+    CHECK OUT : TIPS IN THE SETTINGS WINDOW's ABOUT TAB
 
     If MPD is configured correctly it's all click, drag and drop really.
 
-    ****** CHECK OUT THE TIPS IN THE SETTINGS WINDOW ('ABOUT' TAB) ******
-
     EXTERNAL FILES
 
-    Audio files that are not in the MPD database can be dropped on the
-    playlist. Alternatively the 'send to' or 'open with' command in your file
-    manager can be used.
+    Files that are not in the database can be dropped on the player or on the
+    playlist. Alternatively use the 'send to' or 'open with' command in your
+    file manager or create a custom 'action'(pass %U or %F).
 
     But this will only work if the connection with mpd is established through
-    a so called socket. In MPD's configuration file the bind_to_address must
-    point to "~/.mpd/socket" (replace ~ with the full path to your 'home' dir).
-    In Guimup's login profile (in the settings window) 'Host' must be set
-    exactly the same.
-    ______________________________________________________________________
+    a so called socket. In MPD's configuration file the 'bind_to_address' must
+    point to "/home/USER/.mpd/socket" (replace USER with the name of your home
+    dir). In Quimup's login profile (in the settings window) 'Host' must be
+    set exactly the same.
+
+    It may be necessary to associate relevant file types to 'open with' 
+    Quimup (this is usually done in the file's 'properties' tab).
+    __________________________________________________________________________
 
