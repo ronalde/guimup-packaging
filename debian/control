@@ -2,7 +2,7 @@ Source: quimup
 Section: sound
 Priority: optional
 Maintainer: Ronald van Engelen <ronalde+launchpad@lacocina.nl>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev, pkg-config, libpcre3, libmpdclient-dev (>= 2.3), libsoup2.4-dev (>= 2.30), libgtkmm-3.0-dev
+Build-Depends: cdbs, debhelper (>= 8.0.0), autotools-dev, pkg-config, libpcre3, libmpdclient-dev (>= 2.3), libqt4-dev (>=4.8)
 Standards-Version: 3.9.2
 Homepage: http://coonsden.com/
 Vcs-Git: git://github.com/ronalde/quimup.git
@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/ronalde/quimup.git
 
 Package: quimup
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmpdclient2 (>= 2.3), libsoup2.4-1 (>= 2.30), libgtkmm-3.0-1
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmpdclient2 (>= 2.3), libqtcore4  (>= 4.8), libqtgui4 (>= 4.8), libqt4-network(>= 4.8)
 Enhances: mpd
 Provides: mpd-client
 Suggests: mpd
