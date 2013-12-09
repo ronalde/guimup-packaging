@@ -1,3 +1,11 @@
+quimup (1.3.1ppa3ubuntu1~1.gbpb29ebf) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @b29ebff51aeb3327692e69d62f7334f37be577f5 **
+
+  * UNRELEASED
+
+ -- Ronald van Engelen <ronalde+launchpad@lacocina.nl>  Mon, 09 Dec 2013 17:39:28 +0100
+
 quimup (1.3.1ppa3) saucy; urgency=low
 
   * Tracking the upstream 1.3.1 release
