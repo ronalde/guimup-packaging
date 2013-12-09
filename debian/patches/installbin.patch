@@ -35,7 +35,6 @@ Last-Update: <YYYY-MM-DD>
  
  XUP.SHOW_QT_VERSION_WARNING = 0
 -XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
-\ No newline at end of file
 +XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
 +
 +TARGET = quimup
