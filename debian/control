@@ -14,7 +14,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, libmpdclient2 (>= 2.3), libsoup2.4-
 Enhances: mpd
 Provides: mpd-client
 Suggests: mpd
-Description: QUIMUP is a client for the Music Player Daemon (MPD)
+Description: A client for the Music Player Daemon (MPD)
  written in c++ and QT4. The program can be used with most Linux
  desktops (KDE, GNOME, XFCE). 
  .  
