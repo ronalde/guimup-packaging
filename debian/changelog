@@ -1,4 +1,4 @@
-quimup (1.3.1ppa1) precise quantal oneiric; urgency=low
+quimup (1.3.1ppa1) saucy; urgency=low
 
   * Tracking the upstream 1.3.1 release
   * Name changed from `guimup' to `quimup'
