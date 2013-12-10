@@ -1,5 +1,0 @@
-?package(quimup):needs="X11" section="Applications/Sound" \
-  title="Quimup" command="/usr/bin/quimup" \
-  icon="/usr/share/pixmaps/quimup32.xpm" \
-  icon32x32="/usr/share/pixmaps/quimup32.xpm" \
-  icon16x16="/usr/share/pixmaps/quimup16.xpm"
