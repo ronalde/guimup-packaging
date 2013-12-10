@@ -1,0 +1,74 @@
+#!rst
+
+Quimup for Debian
+=================
+
+Created basic package skeleton using `dh_make --single --copyright gpl
+--createorig` in `v0.3.3` source.
+
+Changes in `./debian`:
+
+`copyright`
+-----------
+
+* points to author, maintainer and GPL
+
+`menu`
+------
+* provide a classic menu entry
+* taken from sourceforge deb 
+
+`docs`
+------
+
+* include `README` and `ChangeLog` from source root
+
+
+`quimup.1`
+----------
+
+* manual page
+* taken from sourceforge deb 
+
+
+`quimup.manpages`
+-----------------
+
+* include manual page
+
+
+`usr/share/pixmaps`
+-------------------
+
+* icons, png files taken from sourceforge deb, xpm files added
+  manually, 16x16pixels icons created from 64x64
+
+
+`usr/share/applications`
+------------------------
+
+* xdg desktop launcher, 
+* taken from sourceforge deb
+
+
+`source/include-binaries`
+-------------------------
+
+* include pixmaps and desktop files
+
+
+`patches/fix-docs-target.patch`
+-------------------------------
+
+* patch to `Makefile.in` in source root to exclude doc files,
+* created using `dquilt`
+
+
+`control`
+---------
+
+* taken from sourceforge deb
+* manually added `pkg-config` and `libpcre3` to "Build-Depends",
+  checked with `dpkg-depcheck -d ./configure`
+
+ -- Ronald van Engelen <rvengelen@hethooghuis.nl>  Sun, 26 Aug 2012 12:51:57 +0200

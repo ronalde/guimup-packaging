@@ -1,0 +1,12 @@
+=============================
+ README for Quimup Packaging
+=============================
+
+This project tracks sources for the upstream quimup project in the
+branch `master`. Recipes for Debian packaging are maintained in the
+`packaging` branch.
+
+Changes and user instructions will be announced at:
+http://lacocina.nl/tag/quimup/
+
+
